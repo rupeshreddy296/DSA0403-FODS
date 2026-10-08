@@ -1,0 +1,25 @@
+import numpy as np
+
+house_data = np.array([
+    [3, 1500, 250000],
+    [5, 2800, 450000],
+    [4, 2200, 380000],
+    [6, 3500, 600000],
+    [5, 3000, 520000],
+    [2, 1100, 180000]
+])
+
+bedrooms_col = house_data[:, 0]
+sale_price_col = house_data[:, 2]
+
+mask = bedrooms_col > 4
+
+average_price_above_four_beds = np.mean(sale_price_col[mask])
+
+print(f"Prices of houses with > 4 bedrooms: {sale_price_col[mask]}")
+print(f"Average sale price: ${average_price_above_four_beds:,.2f}")
+
+Output:
+
+Prices of houses with > 4 bedrooms: [450000 600000 520000]
+Average sale price: $523,333.33
