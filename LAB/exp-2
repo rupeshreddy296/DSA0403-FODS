@@ -1,0 +1,22 @@
+import numpy as np
+
+
+product_sales = np.array([
+    [10.50, 12.00, 15.50],  
+    [20.00, 22.50, 21.00],  
+    [35.00, 40.00, 38.00]   
+])
+
+overall_average_price = np.mean(product_sales)
+
+print(f"All Sales Matrix:\n{product_sales}\n")
+print(f"The overall average price of all products sold is: ${overall_average_price:.2f}")
+
+Output:
+
+All Sales Matrix:
+[[10.5 12.  15.5]
+ [20.  22.5 21. ]
+ [35.  40.  38. ]]
+
+The overall average price of all products sold is: $23.83
