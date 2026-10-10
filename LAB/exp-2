@@ -1,19 +1,23 @@
+
 import numpy as np
 
-sales_matrix = np.array([
-    [18, 267.22, 4809.96],  # Product 1
-    [17, 4209.44, 71560.48], # Product 2
-    [30, 371.40, 11142.00]   # Product 3
+sales_data = np.array([
+    [100, 200, 300],
+    [150, 250, 350],
+    [120, 220, 320]
 ])
 
-prices = sales_matrix[:, 1]
+print("Sales Data:")
+print(sales_data)
 
-average_price = np.mean(prices)
+average = np.mean(sales_data)
 
-print("Prices of products:", prices)
-print(f"Average price of all products: ${average_price:.2f}")
+print("Average price of all products:", round(average, 2))
 
 Output:
 
-Prices of products: [ 267.22 4209.44  371.4 ]
-Average price of all products: $1616.02
+Sales Data:
+[[100 200 300]
+ [150 250 350]
+ [120 220 320]]
+Average price of all products: 223.33
