@@ -1,0 +1,20 @@
+import numpy as np
+
+# Fuel efficiency of two models (km/l)
+fuel_efficiency = np.array([15, 25])
+
+# Calculate average fuel efficiency
+average = np.mean(fuel_efficiency)
+
+# Calculate percentage improvement
+improvement = ((fuel_efficiency[1] - fuel_efficiency[0])
+               / fuel_efficiency[0]) * 100
+
+print("Fuel Efficiency:", fuel_efficiency)
+print("Average Fuel Efficiency:", average, "km/l")
+print("Percentage Improvement:", round(improvement, 2), "%")
+
+ Output:
+        Fuel Efficiency: [15 25]
+        Average Fuel Efficiency: 20.0 km/l
+        Percentage Improvement: 66.67 %
