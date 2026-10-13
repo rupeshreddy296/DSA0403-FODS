@@ -1,25 +1,36 @@
+
+import pandas as pd
 import numpy as np
 
-house_data = np.array([
-    [3, 1500, 250000],
-    [5, 2800, 450000],
-    [4, 2200, 380000],
-    [6, 3500, 600000],
-    [5, 3000, 520000],
-    [2, 1100, 180000]
-])
+# Read the dataset
+df = pd.read_excel("Exp9.xlsx")
 
-bedrooms_col = house_data[:, 0]
-sale_price_col = house_data[:, 2]
+# Convert bedrooms and price into a NumPy array
+house_data = df[['bedrooms', 'price']].to_numpy()
 
-mask = bedrooms_col > 4
+# Select houses with more than 4 bedrooms
+selected_houses = house_data[house_data[:, 0] > 4]
 
-average_price_above_four_beds = np.mean(sale_price_col[mask])
+# Calculate average sale price
+average_price = np.mean(selected_houses[:, 1])
 
-print(f"Prices of houses with > 4 bedrooms: {sale_price_col[mask]}")
-print(f"Average sale price: ${average_price_above_four_beds:,.2f}")
+print("Houses with more than 4 bedrooms:")
+print(selected_houses)
+
+print("Average Sale Price:", round(average_price, 2))
 
 Output:
-
-Prices of houses with > 4 bedrooms: [450000 600000 520000]
-Average sale price: $523,333.33
+Houses with more than 4 bedrooms:
+[[       5 10150000]
+ [       5  8400000]
+ [       5  8120000]
+ [       5  6440000]
+ [       6  6083000]
+ [       5  5600000]
+ [       5  5565000]
+ [       5  4340000]
+ [       5  3850000]
+ [       5  3773000]
+ [       6  3500000]
+ [       5  1960000]]
+Average Sale Price: 5648416.67
