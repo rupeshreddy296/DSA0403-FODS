@@ -1,23 +1,42 @@
 
 import numpy as np
+import pandas as pd
 
-sales_data = np.array([
-    [100, 200, 300],
-    [150, 250, 350],
-    [120, 220, 320]
-])
+# Read the Excel dataset
+df = pd.read_excel("Sales (1).xlsx")
 
+# Display the dataset
 print("Sales Data:")
+print(df.head())
+
+# Select the first 3 rows and 3 numeric columns
+data = df.select_dtypes(include="number").iloc[:3, :3]
+
+# Convert to NumPy array
+sales_data = data.to_numpy()
+
+print("\n3x3 NumPy Matrix:")
 print(sales_data)
 
+# Calculate average
 average = np.mean(sales_data)
 
-print("Average price of all products:", round(average, 2))
+print("\nAverage price of all products:", round(average, 2))
 
 Output:
-
 Sales Data:
-[[100 200 300]
- [150 250 350]
- [120 220 320]]
-Average price of all products: 223.33
+   Product_ID Month_sales  ... Sales_Channel Region_and_Sales_Rep
+0        1052  2023-02-01  ...        Online            North-Bob
+1        1093  2023-04-01  ...        Retail             West-Bob
+2        1015  2023-09-01  ...        Retail          South-David
+3        1072  2023-08-01  ...        Retail            South-Bob
+4        1061  2023-03-01  ...        Online         East-Charlie
+
+[5 rows x 14 columns]
+
+3x3 NumPy Matrix:
+[[1052.   5053.97   18.  ]
+ [1093.   4384.02   17.  ]
+ [1015.   4631.23   30.  ]]
+
+Average price of all products: 1921.58
