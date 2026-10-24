@@ -1,1 +1,52 @@
-import
+import pandas as pd
+
+# Load dataset
+order_data = pd.read_excel('Exp8.xlsx')
+
+# Ensure order_date is datetime formatted
+order_data['order_date'] = pd.to_datetime(order_data['order_date'])
+
+# 1. Total number of orders made by each customer
+# (Uses 'customer_name' and distinct 'order_id' from the dataset; replace with 'customer_id' if using synthetic data)
+orders_per_customer = order_data.groupby('customer_name')['order_id'].nunique().reset_index(name='total_orders')
+
+# 2. Average order quantity for each product
+# (Uses 'quantity' from the dataset; maps to 'order_quantity' in the prompt)
+avg_quantity_per_product = order_data.groupby('product_name')['quantity'].mean().reset_index(name='average_order_quantity')
+
+# 3. Earliest and latest order dates in the dataset
+earliest_order_date = order_data['order_date'].min()
+latest_order_date = order_data['order_date'].max()
+
+# Display results
+print("--- 1. Total Orders Per Customer (Sample) ---")
+print(orders_per_customer.head())
+
+print("\n--- 2. Average Order Quantity Per Product (Sample) ---")
+print(avg_quantity_per_product.head())
+
+print("\n--- 3. Order Date Range ---")
+print(f"Earliest Order Date: {earliest_order_date.strftime('%Y-%m-%d')}")
+print(f"Latest Order Date:   {latest_order_date.strftime('%Y-%m-%d')}")
+
+Otput:
+--- 1. Total Orders Per Customer (Sample) ---
+     customer_name  total_orders
+0    Aaron Bergman            37
+1    Aaron Hawkins            34
+2   Aaron Smayling            31
+3  Adam Bellavance            41
+4        Adam Hart            42
+
+--- 2. Average Order Quantity Per Product (Sample) ---
+                                        product_name  average_order_quantity
+0  "While you Were Out" Message Book, One Form pe...                2.666667
+1           #10 Gummed Flap White Envelopes, 100/Box                2.750000
+2                      #10 Self-Seal White Envelopes                2.500000
+3         #10 White Business Envelopes,4 1/8 x 9 1/2                4.571429
+4            #10- 4 1/8" x 9 1/2" Recycled Envelopes                3.700000
+
+--- 3. Order Date Range ---
+Earliest Order Date: 2011-01-01
+Latest Order Date:   2014-12-31
+
