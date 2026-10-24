@@ -1,17 +1,22 @@
-
+import pandas as pd
 import numpy as np
 
-sales_data = np.array([10000, 12000, 15000, 18000])
+filepath = "Sales (1).xlsx"
+df = pd.read_excel(filepath, sheet_name='Sales')
+
+df['Quarter'] = pd.to_datetime(df['Month_sales']).dt.quarter
+quarterly_sales = df.groupby('Quarter')['Total'].sum().sort_index()
+
+sales_data = quarterly_sales.to_numpy()
+print("Quarterly Sales Array:", sales_data)
 
 total_sales = np.sum(sales_data)
+print(f"Total Sales: ${total_sales:,.2f}")
+if len(sales_data) == 4:
+    pct_increase = ((sales_data[3] - sales_data[0]) / sales_data[0]) * 100
+    print(f"Percentage Increase (Q1 to Q4): {pct_increase:.2f}%")
 
-percentage_increase = (
-    (sales_data[3] - sales_data[0]) / sales_data[0]
-) * 100
-
-print("Total sales for the year:", total_sales)
-print("Percentage increase from Q1 to Q4:", percentage_increase, "%")
-
-output:
-Total sales for the year: 55000
-Percentage increase from Q1 to Q4: 80.0 %
+Output:
+Quarterly Sales Array: [1266978.5  1246529.71 1185251.76 1320505.26]
+Total Sales: $5,019,265.23
+Percentage Increase (Q1 to Q4): 4.22%
