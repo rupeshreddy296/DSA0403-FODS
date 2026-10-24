@@ -1,1 +1,34 @@
+import pandas as pd
 
+# Load the dataset
+df = pd.read_excel('Exp8.xlsx')
+
+# Step 1: Ensure the date column is in datetime format
+df['order_date'] = pd.to_datetime(df['order_date'])
+
+# Step 2: Filter for the most recent month in the dataset
+latest_date = df['order_date'].max()
+first_day_of_month = latest_date.replace(day=1)
+last_month_df = df[
+    (df['order_date'] >= first_day_of_month) & (df['order_date'] <= latest_date)
+]
+
+# Step 3: Group by product name, sum the quantity, and get the top 5
+top_5_products = (
+    last_month_df.groupby('product_name')['quantity']
+    .sum()
+    .sort_values(ascending=False)
+    .head(5)
+    .reset_index()
+)
+
+print(top_5_products)
+
+Output:
+[Running] python -u "c:\Users\rupes\OneDrive\Desktop\FODS LAB\exp-8.py"
+                                  product_name  quantity
+0                                      Staples        37
+1                 Avery Binding Machine, Clear        35
+2  Binney & Smith Pencil Sharpener, Easy-Erase        32
+3              Harbour Creations Chairmat, Red        27
+4               Ibico Binding Machine, Economy        24
