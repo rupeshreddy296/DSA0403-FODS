@@ -1,39 +1,29 @@
+import pandas as pd
 
-# Item prices and quantities
-prices = [100, 200, 150, 50]
-quantities = [2, 1, 3, 4]
+df = pd.read_csv("grocery_purchase_dataset_150_rows (1).csv")
 
-# Discount and tax rates
-discount_rate = 10
-tax_rate = 5
+df['Base_Cost'] = df['Item_Price'] * df['Quantity']
 
-# Calculate subtotal
-subtotal = 0
-for i in range(len(prices)):
-    subtotal += prices[i] * quantities[i]
+df['Discount_Amount'] = df['Base_Cost'] * (df['Discount_Rate_Percent'] / 100)
 
-# Calculate discount
-discount = subtotal * discount_rate / 100
+df['Cost_After_Discount'] = df['Base_Cost'] - df['Discount_Amount']
 
-# Calculate discounted amount
-discounted_amount = subtotal - discount
+df['Tax_Amount'] = df['Cost_After_Discount'] * (df['Tax_Rate_Percent'] / 100)
 
-# Calculate tax
-tax = discounted_amount * tax_rate / 100
+df['Final_Cost'] = df['Cost_After_Discount'] + df['Tax_Amount']
 
-# Calculate final total
-total_cost = discounted_amount + tax
+total_base = df['Base_Cost'].sum()
+total_discount = df['Discount_Amount'].sum()
+total_tax = df['Tax_Amount'].sum()
+total_cost = df['Final_Cost'].sum()
 
-# Display results
-print("Subtotal: Rs.", round(subtotal, 2))
-print("Discount: Rs.", round(discount, 2))
-print("Amount after discount: Rs.", round(discounted_amount, 2))
-print("Tax: Rs.", round(tax, 2))
-print("Total cost: Rs.", round(total_cost, 2))
+print(f"Total Base Cost: {total_base:.2f}")
+print(f"Total Discount: {total_discount:.2f}")
+print(f"Total Tax: {total_tax:.2f}")
+print(f"Total Final Cost: {total_cost:.2f}")
 
 Output:
-Subtotal: Rs. 1050
-Discount: Rs. 105.0
-Amount after discount: Rs. 945.0
-Tax: Rs. 47.25
-Total cost: Rs. 992.25
+Total Base Cost: 166825.67
+Total Discount: 17063.05
+Total Tax: 12304.79
+Total Final Cost: 162067.42
