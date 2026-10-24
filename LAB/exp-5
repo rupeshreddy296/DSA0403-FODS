@@ -1,19 +1,24 @@
-
+import pandas as pd
 import numpy as np
 
-# Sample fuel efficiency data (km/l)
-fuel_efficiency = np.array([15, 18, 20, 22, 25])
+file_name = 'Fuel_Efficiency datasets.xlsx - Sheet1 (1).xlsx'
+df = pd.read_excel(file_name)
 
-# Calculate average fuel efficiency
-average = np.mean(fuel_efficiency)
+mustang_data = df[df['model'] == 'mustang']['highway_mpg(Fuel Efficiency)']
+corolla_data = df[df['model'] == 'corolla']['highway_mpg(Fuel Efficiency)']
 
-# Percentage improvement from first to last model
-improvement = ((fuel_efficiency[-1] - fuel_efficiency[0])
-               / fuel_efficiency[0]) * 100
+mustang_array = np.array(mustang_data)
+corolla_array = np.array(corolla_data)
+mustang_avg = np.mean(mustang_array)
+corolla_avg = np.mean(corolla_array)
 
-print("Average fuel efficiency:", round(average, 2), "km/l")
-print("Percentage improvement:", round(improvement, 2), "%")
+percentage_improvement = ((corolla_avg - mustang_avg) / mustang_avg) * 100
+
+print(f"Average Ford Mustang Efficiency: {mustang_avg:.2f} mpg")
+print(f"Average Toyota Corolla Efficiency: {corolla_avg:.2f} mpg")
+print(f"Percentage Improvement (Mustang to Corolla): {percentage_improvement:.2f}%")
 
 Output:
-Average fuel efficiency: 20.0 km/l
-Percentage improvement: 66.67 %
+Average Ford Mustang Efficiency: 26.60 mpg
+Average Toyota Corolla Efficiency: 38.25 mpg
+Percentage Improvement (Mustang to Corolla): 43.80%
