@@ -1,0 +1,79 @@
+
+import pandas as pd
+import re
+from collections import Counter
+import matplotlib.pyplot as plt
+
+# Read CSV file
+df = pd.read_csv("19customer_reviews.csv")
+
+# Remove missing reviews
+reviews = df["Review Text"].dropna().astype(str)
+
+# Combine all reviews
+text = " ".join(reviews)
+
+# Convert to lowercase
+text = text.lower()
+
+# Extract words
+words = re.findall(r"\b[a-z]+\b", text)
+
+# Calculate word frequency
+word_frequency = Counter(words)
+
+# Convert to DataFrame
+result = pd.DataFrame(
+    word_frequency.items(),
+    columns=["Word", "Frequency"]
+)
+
+# Sort by frequency
+result = result.sort_values(
+    by="Frequency", ascending=False
+)
+
+# Display top 20 words
+print("Top 20 Frequently Used Words:")
+print(result.head(20))
+
+# Save output
+result.to_csv("customer_review_word_frequency.csv", index=False)
+
+# Plot top 20 words
+top_words = result.head(20)
+
+plt.figure(figsize=(12, 6))
+plt.bar(top_words["Word"], top_words["Frequency"])
+
+plt.title("Word Frequency Distribution of Customer Reviews")
+plt.xlabel("Words")
+plt.ylabel("Frequency")
+plt.xticks(rotation=45)
+plt.tight_layout()
+plt.show()
+
+
+Output:
+Top 20 Frequently Used Words:
+     Word  Frequency
+32    the        829
+13      i        672
+9      it        555
+3     and        551
+18      a        463
+47     is        354
+7    this        285
+15     to        260
+17     in        205
+53    for        190
+62    but        176
+34     on        168
+121  with        151
+67   that        141
+137    of        138
+75    was        134
+65     so        132
+59     my        111
+69    not        110
+10      s        100
