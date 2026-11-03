@@ -1,0 +1,64 @@
+
+import pandas as pd
+import re
+from collections import Counter
+
+# Read CSV file
+df = pd.read_csv("16bbc-text.csv")
+
+# Extract text
+text = " ".join(df["text"].dropna().astype(str))
+
+# Convert to lowercase
+text = text.lower()
+
+# Extract words
+words = re.findall(r"\b[a-z]+\b", text)
+
+# Calculate word frequency
+word_freq = Counter(words)
+
+# Create DataFrame
+result = pd.DataFrame(
+    word_freq.items(),
+    columns=["Word", "Frequency"]
+)
+
+# Sort by frequency
+result = result.sort_values(
+    by="Frequency",
+    ascending=False
+)
+
+# Save output
+result.to_csv("word_frequency.csv", index=False)
+
+# Display top 20 words
+print(result.head(20))
+
+print("Word frequency distribution completed!")
+
+
+Output:
+     Word  Frequency
+3     the      52636
+36     to      25113
+5      of      20008
+15    and      18611
+145     a      18323
+2      in      17725
+93      s       9070
+111   for       8945
+34     is       8555
+33   that       8257
+152    it       7893
+259    on       7625
+207  said       7255
+368   was       6028
+219    he       5939
+27     be       5805
+7    with       5354
+158    as       4981
+84    has       4957
+275  have       4772
+Word frequency distribution completed!
