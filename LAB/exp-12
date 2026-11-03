@@ -1,0 +1,60 @@
+import matplotlib.pyplot as plt
+import pandas as pd
+
+df = pd.read_csv("12.Temprain.csv")
+
+year_df = df[df["Year"] == 1901]
+
+months = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+]
+
+# Set up figure with side-by-side subplots
+fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+
+# 1. Line plot: Monthly Temperature
+axes[0].plot(
+    year_df["Month"],
+    year_df["tem"],
+    marker="o",
+    color="crimson",
+    linewidth=2,
+    label="Temperature",
+)
+axes[0].set_title("Monthly Temperature (1901)", fontsize=13, fontweight="bold")
+axes[0].set_xlabel("Month", fontsize=11)
+axes[0].set_ylabel("Temperature (°C)", fontsize=11)
+axes[0].set_xticks(range(1, 13))
+axes[0].set_xticklabels(months)
+axes[0].grid(True, linestyle="--", alpha=0.6)
+axes[0].legend()
+
+axes[1].scatter(
+    year_df["Month"],
+    year_df["rain"],
+    color="teal",
+    s=80,
+    edgecolor="black",
+    label="Rainfall",
+)
+axes[1].set_title("Monthly Rainfall (1901)", fontsize=13, fontweight="bold")
+axes[1].set_xlabel("Month", fontsize=11)
+axes[1].set_ylabel("Rainfall (mm)", fontsize=11)
+axes[1].set_xticks(range(1, 13))
+axes[1].set_xticklabels(months)
+axes[1].grid(True, linestyle="--", alpha=0.6)
+axes[1].legend()
+
+plt.tight_layout()
+plt.show()
