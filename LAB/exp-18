@@ -26,3 +26,18 @@ plt.xlabel("Number of Likes")
 plt.ylabel("Number of Posts")
 plt.tight_layout()
 plt.show()
+
+Output:
+Frequency Distribution of Likes:
+likes
+(-1634.13, 163413.0]      188
+(163413.0, 326826.0]        9
+(326826.0, 490239.0]        0
+(490239.0, 653652.0]        0
+(653652.0, 817065.0]        1
+(817065.0, 980478.0]        0
+(980478.0, 1143891.0]       0
+(1143891.0, 1307304.0]      0
+(1307304.0, 1470717.0]      0
+(1470717.0, 1634130.0]      1
+Name: count, dtype: int64
