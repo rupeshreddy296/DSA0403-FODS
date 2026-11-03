@@ -1,0 +1,27 @@
+
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# Read CSV file
+df = pd.read_csv("17Mall_Customers.csv")
+
+# Calculate age frequency
+age_frequency = df["Age"].value_counts().sort_index()
+
+# Display frequency distribution
+print("Frequency Distribution of Customer Ages:")
+print(age_frequency)
+
+# Save frequency distribution
+age_frequency.to_csv("age_frequency.csv", header=["Frequency"])
+
+# Plot bar chart
+age_frequency.plot(kind="bar", figsize=(10, 5))
+
+plt.title("Frequency Distribution of Customer Ages")
+plt.xlabel("Age")
+plt.ylabel("Number of Customers")
+plt.tight_layout()
+plt.show()
+
+Output:
