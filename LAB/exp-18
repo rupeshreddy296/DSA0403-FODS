@@ -1,0 +1,28 @@
+
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# Read CSV file
+df = pd.read_csv("18social_media.csv")
+
+# Remove missing values
+likes = df["likes"].dropna()
+
+# Calculate frequency distribution using intervals
+frequency = pd.cut(likes, bins=10).value_counts().sort_index()
+
+# Display frequency
+print("Frequency Distribution of Likes:")
+print(frequency)
+
+# Save result
+frequency.to_csv("likes_frequency.csv", header=["Frequency"])
+
+# Plot histogram
+plt.hist(likes, bins=10, edgecolor="black")
+
+plt.title("Frequency Distribution of Likes")
+plt.xlabel("Number of Likes")
+plt.ylabel("Number of Posts")
+plt.tight_layout()
+plt.show()
