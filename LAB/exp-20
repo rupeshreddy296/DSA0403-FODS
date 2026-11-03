@@ -1,0 +1,109 @@
+
+import pandas as pd
+import re
+from collections import Counter
+import matplotlib.pyplot as plt
+
+# Read CSV file
+df = pd.read_csv("20twitter.csv")
+
+# Remove missing values
+tweets = df["text"].dropna().astype(str)
+
+# Combine tweets
+text = " ".join(tweets)
+
+# Convert to lowercase
+text = text.lower()
+
+# Remove URLs
+text = re.sub(r"http\S+|www\S+", "", text)
+
+# Remove mentions
+text = re.sub(r"@\w+", "", text)
+
+# Remove hashtag symbols but keep words
+text = text.replace("#", "")
+
+# Remove special characters and numbers
+text = re.sub(r"[^a-z\s]", " ", text)
+
+# Extract words
+words = text.split()
+
+# Remove common stopwords
+stopwords = {
+    "the", "is", "a", "an", "and", "to", "of",
+    "in", "for", "on", "it", "this", "that",
+    "you", "i", "we", "are", "was", "be",
+    "with", "my", "me", "your", "our", "at",
+    "have", "has", "had", "but", "not", "so",
+    "they", "he", "she", "them", "their",
+    "what", "when", "who", "how", "or", "as"
+}
+
+# Filter words
+filtered_words = [
+    word for word in words
+    if word not in stopwords and len(word) > 2
+]
+
+# Calculate word frequency
+word_frequency = Counter(filtered_words)
+
+# Get Top-N words
+N = 20
+top_words = word_frequency.most_common(N)
+
+# Convert to DataFrame
+result = pd.DataFrame(
+    top_words,
+    columns=["Word", "Frequency"]
+)
+
+# Display results
+print("Top", N, "Frequently Used Words:")
+print(result)
+
+# Save results
+result.to_csv("twitter_top_words.csv", index=False)
+
+# Visualize top-N words
+plt.figure(figsize=(12, 6))
+
+plt.bar(result["Word"], result["Frequency"])
+
+plt.title("Top-N Word Frequency of Customer Feedback")
+plt.xlabel("Words")
+plt.ylabel("Frequency")
+plt.xticks(rotation=45)
+plt.tight_layout()
+plt.show()
+
+print("Text preprocessing completed successfully!")
+
+
+Output;
+Top 20 Frequently Used Words:
+       Word  Frequency
+0       can         25
+1      help         19
+2    thanks         13
+3     there         13
+4       out         12
+5    please         11
+6      from          9
+7     phone          9
+8       ios          9
+9     about          8
+10  version          8
+11     just          8
+12      let          8
+13      get          8
+14     will          8
+15   device          7
+16     here          7
+17     look          7
+18   update          7
+19    using          7
+Text preprocessing completed successfully!
