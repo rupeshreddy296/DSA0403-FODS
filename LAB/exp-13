@@ -1,0 +1,32 @@
+import pandas as pd
+import numpy as np
+
+# Load the dataset
+df = pd.read_csv('13.ADANIPORTS.csv')
+
+# Convert the Date column to datetime objects and sort
+df['Date'] = pd.to_datetime(df['Date'])
+df.sort_values('Date', inplace=True)
+df.set_index('Date', inplace=True)
+
+# 1. Calculate Daily Returns and Volatility
+df['Daily Return'] = df['Close'].pct_change()
+daily_volatility = df['Daily Return'].std()
+annualized_volatility = daily_volatility * np.sqrt(252)
+
+# 2. Calculate Intraday Variability (High - Low Spread)
+df['Intraday Spread (%)'] = (df['High'] - df['Low']) / df['Low'] * 100
+avg_intraday_spread = df['Intraday Spread (%)'].mean()
+
+# 3. Monthly/Yearly Aggregation for the Chart
+annual_data = df.resample('YE').agg({
+    'Close': 'last',
+    'Daily Return': 'std'
+})
+annual_data['Annualized Vol'] = annual_data['Daily Return'] * np.sqrt(252)
+
+# Display summary statistics
+print(f"Annualized Volatility: {annualized_volatility * 100:.2f}%")
+print(f"Average Intraday Spread: {avg_intraday_spread:.2f}%")
+print(f"Min Close: {df['Close'].min()}, Max Close: {df['Close'].max()}")
+print(f"Daily Volatility: {daily_volatility * 100:.2f}%")
