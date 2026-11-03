@@ -1,0 +1,55 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+# 1. Load dataset & prepare monthly sales
+df = pd.read_excel('Sales (1).xlsx')
+df['Month_Date'] = pd.to_datetime(df['Month_sales'])
+monthly_data = df.groupby(df['Month_Date'].dt.to_period('M'))['Total'].sum().reset_index()
+monthly_data['Month_Str'] = monthly_data['Month_Date'].dt.strftime('%b %Y')
+
+# ==========================================
+# 1. Line Plot
+# ==========================================
+plt.figure(figsize=(9, 4))
+plt.plot(monthly_data['Month_Str'], monthly_data['Total'], marker='o', color='#1f77b4', linewidth=2, label='Monthly Sales')
+plt.title('Question 1: Monthly Sales Trend (Line Plot)', fontsize=12, fontweight='bold')
+plt.xlabel('Month')
+plt.ylabel('Total Sales ($)')
+plt.xticks(rotation=45)
+plt.grid(True, linestyle='--', alpha=0.5)
+plt.legend()
+plt.tight_layout()
+plt.show()   # Displays line plot
+
+# ==========================================
+# 2. Scatter Plot with Trendline
+# ==========================================
+x_nums = np.arange(len(monthly_data))
+slope, intercept = np.polyfit(x_nums, monthly_data['Total'], 1)
+trendline = slope * x_nums + intercept
+
+plt.figure(figsize=(9, 4))
+plt.scatter(monthly_data['Month_Str'], monthly_data['Total'], color='crimson', s=55, label='Actual Sales')
+plt.plot(monthly_data['Month_Str'], trendline, color='darkblue', linestyle='--', linewidth=2, label=f'Trendline (Fit: y = {slope:.1f}x + {intercept:.1f})')
+plt.title('Question 2: Monthly Sales with Trendline (Scatter Plot)', fontsize=12, fontweight='bold')
+plt.xlabel('Month')
+plt.ylabel('Total Sales ($)')
+plt.xticks(rotation=45)
+plt.grid(True, linestyle='--', alpha=0.5)
+plt.legend()
+plt.tight_layout()
+plt.show()   # Displays scatter plot
+
+# ==========================================
+# 3. Bar Plot
+# ==========================================
+plt.figure(figsize=(9, 4))
+plt.bar(monthly_data['Month_Str'], monthly_data['Total'], color='teal', edgecolor='black', alpha=0.85)
+plt.title('Question 3: Monthly Sales Data (Bar Plot)', fontsize=12, fontweight='bold')
+plt.xlabel('Month')
+plt.ylabel('Total Sales ($)')
+plt.xticks(rotation=45)
+plt.grid(axis='y', linestyle='--', alpha=0.5)
+plt.tight_layout()
+plt.show()   # Displays bar plot
