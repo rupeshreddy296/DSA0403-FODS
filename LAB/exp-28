@@ -1,0 +1,93 @@
+import numpy as np
+import pandas as pd
+
+# 1. Load the dataset (skipping the first 3 title/blank rows)
+file_path = 'FODS_Lab_Datasets_Q20_to_Q40.xlsx'
+df = pd.read_excel(file_path, sheet_name='Q28_Customer_Seg_KMeans', skiprows=3)
+
+feature_cols = ['Annual_Spend_USD', 'Orders_Per_Year', 'Avg_Basket_USD']
+X = df[feature_cols].to_numpy(dtype=float)
+
+# 2. Standardize features (Z-score scaling)
+means = X.mean(axis=0)
+stds = X.std(axis=0)
+X_scaled = (X - means) / stds
+
+
+# 3. K-Means Clustering (Lloyd's Algorithm)
+def fit_kmeans(X_data, k=3, max_iters=100, seed=42):
+  rng = np.random.default_rng(seed)
+  centroids = X_data[rng.choice(len(X_data), size=k, replace=False)].copy()
+
+  for _ in range(max_iters):
+    # Compute Euclidean distance from each customer to each centroid
+    distances = np.linalg.norm(X_data[:, np.newaxis] - centroids, axis=2)
+    labels = np.argmin(distances, axis=1)
+
+    # Update centroids
+    new_centroids = np.array(
+        [X_data[labels == i].mean(axis=0) for i in range(k)]
+    )
+    if np.allclose(centroids, new_centroids):
+      break
+    centroids = new_centroids
+  return centroids, labels
+
+
+centroids_scaled, df['Cluster'] = fit_kmeans(X_scaled, k=3)
+
+# 4. Display cluster centroids in original units
+centroids_orig = pd.DataFrame(
+    centroids_scaled * stds + means, columns=feature_cols
+)
+centroids_orig.index.name = 'Cluster_ID'
+print('--- Existing Customer Segment Profiles (Centroids) ---')
+print(centroids_orig.round(2))
+print()
+
+# Map cluster IDs to descriptive labels based on Annual Spend rank
+spend_order = centroids_orig['Annual_Spend_USD'].sort_values().index.tolist()
+segment_labels = {
+    spend_order[0]: 'Budget / Occasional Shopper',
+    spend_order[1]: 'Regular Mid-Tier Shopper',
+    spend_order[2]: 'High-Value VIP Shopper',
+}
+
+# 5. Predict segment for a new customer
+print('--- Enter New Customer Purchasing Details ---')
+try:
+  annual_spend = float(input('Enter Annual Spend in USD (e.g., 1500.00): '))
+  orders_per_year = int(input('Enter Orders Per Year (e.g., 15): '))
+  avg_basket = float(input('Enter Average Basket Value in USD (e.g., 95.00): '))
+
+  # Scale input and find nearest centroid
+  new_customer = np.array([annual_spend, orders_per_year, avg_basket])
+  new_customer_scaled = (new_customer - means) / stds
+  assigned_cluster = int(
+      np.argmin(np.linalg.norm(centroids_scaled - new_customer_scaled, axis=1))
+  )
+
+  print('\n--- Segmentation Result ---')
+  print(f'Assigned Cluster ID : {assigned_cluster}')
+  print(f'Customer Segment    : {segment_labels[assigned_cluster]}')
+
+except ValueError:
+  print('Invalid input. Please enter numeric values for all features.')
+
+  Output:
+  --- Existing Customer Segment Profiles (Centroids) ---
+            Annual_Spend_USD  Orders_Per_Year  Avg_Basket_USD
+Cluster_ID                                                   
+0                     415.45             4.41           86.64
+1                    1615.56            15.00          105.75
+2                    3223.75            24.78          138.12
+
+--- Enter New Customer Purchasing Details ---
+Enter Annual Spend in USD (e.g., 1500.00): 1647.80
+Enter Orders Per Year (e.g., 15): 13
+Enter Average Basket Value in USD (e.g., 95.00): 84.18
+
+--- Segmentation Result ---
+Assigned Cluster ID : 1
+Customer Segment    : Regular Mid-Tier Shopper
+  
