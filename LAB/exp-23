@@ -1,0 +1,134 @@
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from scipy import stats
+
+# 1. Load the dataset from the Excel workbook
+file_path = "FODS_Lab_Datasets_Q20_to_Q40.xlsx"
+df = pd.read_excel(file_path, sheet_name="Q23_Clinical_Trial", skiprows=3)
+
+# 2. Separate Control (Placebo) and Treatment groups
+placebo_imp = df[df["Group"] == "Placebo"]["Improvement"]
+treatment_imp = df[df["Group"] == "Treatment"]["Improvement"]
+
+# 3. Perform Two-Sample Independent t-test (Welch's t-test)
+t_stat, p_val = stats.ttest_ind(treatment_imp, placebo_imp, equal_var=False)
+
+print("=== Experiment 23: Clinical Trial Hypothesis Test (alpha = 0.05) ===")
+print(
+    f"Placebo Group (n={len(placebo_imp)}):   Mean Improvement ="
+    f" {placebo_imp.mean():.4f}, SD = {placebo_imp.std(ddof=1):.4f}"
+)
+print(
+    f"Treatment Group (n={len(treatment_imp)}): Mean Improvement ="
+    f" {treatment_imp.mean():.4f}, SD = {treatment_imp.std(ddof=1):.4f}"
+)
+print(f"t-statistic = {t_stat:.4f}")
+print(f"p-value     = {p_val:.6e}")
+
+# 4. Visualize distributions and p-value using Matplotlib
+fig, axes = plt.subplots(1, 2, figsize=(13, 5.5))
+groups = ["Placebo", "Treatment"]
+data_imp = [placebo_imp, treatment_imp]
+colors = ["#6baed6", "#31a354"]
+
+bp = axes[0].boxplot(
+    data_imp,
+    tick_labels=groups,
+    patch_artist=True,
+    widths=0.45,
+    medianprops=dict(color="black", linewidth=2),
+)
+for patch, color in zip(bp["boxes"], colors):
+  patch.set_facecolor(color)
+  patch.set_alpha(0.75)
+
+np.random.seed(42)
+for i, d in enumerate(data_imp, start=1):
+  jitter = np.random.normal(0, 0.05, size=len(d))
+  axes[0].scatter(
+      np.repeat(i, len(d)) + jitter,
+      d,
+      color="#1f2937",
+      alpha=0.65,
+      s=22,
+      zorder=3,
+  )
+
+y_max = max(treatment_imp.max(), placebo_imp.max()) + 4
+axes[0].plot(
+    [1, 1, 2, 2], [y_max - 1.5, y_max, y_max, y_max - 1.5], lw=1.5, c="black"
+)
+axes[0].text(
+    1.5,
+    y_max + 0.8,
+    f"Welch's t = {t_stat:.4f}\np = {p_val:.2e} (Significant, α = 0.05)",
+    ha="center",
+    va="bottom",
+    fontsize=10,
+    fontweight="bold",
+)
+axes[0].set_ylim(min(placebo_imp.min(), treatment_imp.min()) - 5, y_max + 9)
+axes[0].set_title(
+    "Exp 23: Score Improvement Distribution by Group",
+    fontsize=12,
+    fontweight="bold",
+)
+axes[0].set_ylabel("Improvement (Baseline - Post-Treatment)", fontsize=10)
+axes[0].grid(axis="y", linestyle="--", alpha=0.5)
+
+means = [placebo_imp.mean(), treatment_imp.mean()]
+sems = [stats.sem(placebo_imp), stats.sem(treatment_imp)]
+ci_95 = [sem * stats.t.ppf(0.975, df=len(placebo_imp) - 1) for sem in sems]
+
+bars = axes[1].bar(
+    groups,
+    means,
+    yerr=ci_95,
+    capsize=8,
+    color=colors,
+    alpha=0.85,
+    edgecolor="black",
+    width=0.45,
+    error_kw=dict(lw=1.8),
+)
+for bar, mean_val in zip(bars, means):
+  axes[1].text(
+      bar.get_x() + bar.get_width() / 2,
+      mean_val + 4.5,
+      f"Mean: {mean_val:.2f}",
+      ha="center",
+      va="bottom",
+      fontsize=10,
+      fontweight="bold",
+  )
+
+axes[1].set_ylim(0, max(means) + max(ci_95) + 7)
+axes[1].set_title(
+    "Exp 23: Mean Improvement (±95% CI) & Hypothesis Test",
+    fontsize=12,
+    fontweight="bold",
+)
+axes[1].set_ylabel("Mean Score Improvement", fontsize=10)
+axes[1].text(
+    0.5,
+    0.85,
+    "Null Hypothesis ($H_0$): $\\mu_{Treatment} = \\mu_{Placebo}$\nResult:"
+    f" Reject $H_0$ ($p = {p_val:.5f} < 0.05$)",
+    transform=axes[1].transAxes,
+    ha="center",
+    bbox=dict(
+        boxstyle="round,pad=0.5", facecolor="#f0f9ff", edgecolor="#0284c7"
+    ),
+)
+axes[1].grid(axis="y", linestyle="--", alpha=0.5)
+
+plt.tight_layout()
+plt.show()
+
+output:
+=== Experiment 23: Clinical Trial Hypothesis Test (alpha = 0.05) ===
+Placebo Group (n=40):   Mean Improvement = 2.6250, SD = 11.8455
+Treatment Group (n=40): Mean Improvement = 14.5300, SD = 12.2998
+t-statistic = 4.4092
+p-value     = 3.282447e-05
