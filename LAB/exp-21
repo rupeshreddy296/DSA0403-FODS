@@ -1,0 +1,93 @@
+import os
+import math
+from statistics import NormalDist
+import numpy as np
+import pandas as pd
+
+# Function to calculate Student's t critical value
+def t_critical(confidence, df):
+    z = NormalDist().inv_cdf((1 + confidence) / 2)
+    return z + (z**3 + z) / (4 * df)
+
+# Locate 'FODS_Lab_Datasets_Q20_to_Q40.xlsx' in the script's folder or Downloads
+script_dir = os.path.dirname(os.path.abspath(__file__)) if "__file__" in globals() else os.getcwd()
+downloads_dir = os.path.join(os.path.expanduser("~"), "Downloads")
+
+excel_name = "FODS_Lab_Datasets_Q20_to_Q40.xlsx"
+if os.path.exists(os.path.join(script_dir, excel_name)):
+    excel_path = os.path.join(script_dir, excel_name)
+elif os.path.exists(os.path.join(downloads_dir, excel_name)):
+    excel_path = os.path.join(downloads_dir, excel_name)
+else:
+    raise FileNotFoundError(f"Could not find '{excel_name}' in {script_dir} or {downloads_dir}.")
+
+# Read the Q21_Rare_Elements sheet (skip top 3 title/blank rows)
+data = pd.read_excel(excel_path, sheet_name="Q21_Rare_Elements", skiprows=3)
+values = data["Concentration_ppm"].dropna().values
+
+# Get user inputs
+n = int(input("Enter sample size (2 to 60): "))
+confidence = float(input("Enter confidence level (e.g., 95): "))
+precision = float(input("Enter desired level of precision: "))
+
+# Validate inputs
+if n < 2 or n > len(values):
+    print(f"Invalid sample size! Must be between 2 and {len(values)}.")
+elif confidence <= 0 or confidence >= 100:
+    print("Enter confidence level between 0 and 100!")
+elif precision <= 0:
+    print("Enter a positive precision value!")
+else:
+    # Select random sample using NumPy
+    np.random.seed(42)
+    sample = np.random.choice(values, size=n, replace=False)
+
+    # Point estimation & sample standard deviation
+    sample_mean = np.mean(sample)
+    sample_std = np.std(sample, ddof=1)
+
+    # Critical t-value, standard error, and margin of error
+    alpha = 1 - (confidence / 100)
+    t_value = t_critical(1 - alpha, n - 1)
+    standard_error = sample_std / math.sqrt(n)
+    margin_error = t_value * standard_error
+
+    # Confidence interval
+    lower = sample_mean - margin_error
+    upper = sample_mean + margin_error
+
+    # Display results
+    print("\n----- RARE ELEMENT ESTIMATION RESULTS -----")
+    print("Sample Size:", n)
+    print("Confidence Level:", confidence, "%")
+    print("Desired Precision:", precision)
+
+    print("\nPoint Estimate (Sample Mean):", round(sample_mean, 4))
+    print("Sample Standard Deviation:", round(sample_std, 4))
+    print("Standard Error:", round(standard_error, 4))
+    print("Margin of Error:", round(margin_error, 4))
+
+    print("\nConfidence Interval:")
+    print("Lower Limit:", round(lower, 4))
+    print("Upper Limit:", round(upper, 4))
+
+    if margin_error <= precision:
+        print("\nDesired precision achieved!")
+    else:
+        print("\nDesired precision not achieved! Increase the sample size.")
+
+
+        Output:
+        Confidence Level: 66.0 %
+Desired Precision: 41.0
+
+Point Estimate (Sample Mean): 43.5275
+Sample Standard Deviation: 5.5521
+Standard Error: 0.7419
+Margin of Error: 0.7141
+
+Confidence Interval:
+Lower Limit: 42.8134
+Upper Limit: 44.2416
+
+Desired precision achieved!
