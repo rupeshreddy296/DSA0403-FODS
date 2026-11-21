@@ -1,0 +1,151 @@
+import pandas as pd
+from sklearn.metrics import (
+    accuracy_score,
+    classification_report,
+    confusion_matrix,
+    f1_score,
+    precision_score,
+    recall_score,
+)
+from sklearn.model_selection import train_test_split
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.preprocessing import StandardScaler
+
+# 1. Load the dataset (skipping the first 3 title/blank rows)
+file_path = 'FODS_Lab_Datasets_Q20_to_Q40.xlsx'
+df = pd.read_excel(file_path, sheet_name='Q34_Medical_Treatment_KNN', skiprows=3)
+
+# 2. Encode categorical Gender feature (Male = 1, Female = 0)
+df['Gender_Encoded'] = df['Gender'].map({'Male': 1, 'Female': 0})
+
+feature_cols = ['Age', 'Gender_Encoded', 'Blood_Pressure', 'Cholesterol']
+X = df[feature_cols]
+y = df['Treatment_Outcome']
+
+# 3. Split dataset into training (75%) and testing (25%) sets
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.25, random_state=42, stratify=y
+)
+
+# 4. Standardize features (essential for distance-based KNN)
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+# 5. Train the K-Nearest Neighbors (KNN) classifier
+k = 5
+knn_model = KNeighborsClassifier(n_neighbors=k)
+knn_model.fit(X_train_scaled, y_train)
+
+# 6. Make predictions on the test set
+y_pred = knn_model.predict(X_test_scaled)
+
+# 7. Calculate and display evaluation metrics
+accuracy = accuracy_score(y_test, y_pred)
+precision = precision_score(y_test, y_pred, pos_label='Good')
+recall = recall_score(y_test, y_pred, pos_label='Good')
+f1 = f1_score(y_test, y_pred, pos_label='Good')
+
+print(f'--- KNN Classification Performance (k = {k}) ---')
+print(f'Accuracy  : {accuracy:.4f} ({accuracy * 100:.2f}%)')
+print(f'Precision : {precision:.4f}')
+print(f'Recall    : {recall:.4f}')
+print(f'F1-Score  : {f1:.4f}\n')
+
+print('--- Confusion Matrix (Labels: Good, Bad) ---')
+print(confusion_matrix(y_test, y_pred, labels=['Good', 'Bad']))
+print()
+
+print('--- Detailed Classification Report ---')
+print(classification_report(y_test, y_pred))
+
+# 8. Display test set predictions alongside actual outcomes
+test_results = df.loc[
+    X_test.index,
+    [
+        'Patient_ID',
+        'Age',
+        'Gender',
+        'Blood_Pressure',
+        'Cholesterol',
+        'Treatment_Outcome',
+    ],
+].copy()
+test_results['Predicted_Outcome'] = y_pred
+test_results['Correct'] = (
+    test_results['Treatment_Outcome'] == test_results['Predicted_Outcome']
+)
+
+print('--- Test Set Predictions ---')
+print(test_results.to_string(index=False))
+
+# 9. Optional: Predict outcome for a new patient
+print('\n--- Predict Outcome for a New Patient ---')
+try:
+  age = int(input('Enter Age (e.g., 42): '))
+  gender_str = input('Enter Gender (Male/Female): ').strip().capitalize()
+  bp = float(input('Enter Blood Pressure (e.g., 125): '))
+  chol = float(input('Enter Cholesterol (e.g., 210): '))
+
+  gender_val = 1 if gender_str == 'Male' else 0
+  new_patient = pd.DataFrame(
+      [[age, gender_val, bp, chol]], columns=feature_cols
+  )
+  new_patient_scaled = scaler.transform(new_patient)
+
+  outcome_pred = knn_model.predict(new_patient_scaled)[0]
+  probs = knn_model.predict_proba(new_patient_scaled)[0]
+  good_prob = probs[list(knn_model.classes_).index('Good')]
+
+  print(f'\nPredicted Treatment Outcome: {outcome_pred}')
+  print(f"Confidence for 'Good' Response: {good_prob * 100:.1f}%")
+except ValueError:
+  print('Invalid numeric input entered.')
+
+  Output:
+  --- KNN Classification Performance (k = 5) ---
+Accuracy  : 0.9333 (93.33%)
+Precision : 1.0000
+Recall    : 0.8750
+F1-Score  : 0.9333
+
+--- Confusion Matrix (Labels: Good, Bad) ---
+[[7 1]
+ [0 7]]
+
+--- Detailed Classification Report ---
+              precision    recall  f1-score   support
+
+         Bad       0.88      1.00      0.93         7
+        Good       1.00      0.88      0.93         8
+
+    accuracy                           0.93        15
+   macro avg       0.94      0.94      0.93        15
+weighted avg       0.94      0.93      0.93        15
+
+--- Test Set Predictions ---
+Patient_ID  Age Gender  Blood_Pressure  Cholesterol Treatment_Outcome Predicted_Outcome  Correct
+    TR-041   55   Male             166          274               Bad               Bad     True
+    TR-053   40   Male             112          214              Good              Good     True
+    TR-029   59   Male             130          203              Good              Good     True
+    TR-023   59   Male             170          247               Bad               Bad     True
+    TR-027   37 Female             140          193              Good              Good     True
+    TR-019   34   Male             107          194              Good              Good     True
+    TR-014   36   Male             147          285               Bad               Bad     True
+    TR-043   48 Female             149          284               Bad               Bad     True
+    TR-033   75   Male             124          255               Bad               Bad     True
+    TR-059   28   Male             168          176              Good              Good     True
+    TR-055   45   Male             157          219              Good               Bad    False
+    TR-054   29   Male             124          241              Good              Good     True
+    TR-034   35 Female             112          180              Good              Good     True
+    TR-060   53   Male             146          243               Bad               Bad     True
+    TR-016   55 Female             144          280               Bad               Bad     True
+
+--- Predict Outcome for a New Patient ---
+Enter Age (e.g., 42): 31
+Enter Gender (Male/Female): male
+Enter Blood Pressure (e.g., 125): 168
+Enter Cholesterol (e.g., 210): 248
+
+Predicted Treatment Outcome: Bad
+Confidence for 'Good' Response: 40.0%
