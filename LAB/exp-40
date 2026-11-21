@@ -1,0 +1,118 @@
+import os
+import matplotlib.pyplot as plt
+import pandas as pd
+
+# 1. Create/export dataset to a CSV file (from the lab Excel sheet or embedded records)
+csv_file = 'soccer_players.csv'
+xlsx_file = 'FODS_Lab_Datasets_Q20_to_Q40.xlsx'
+
+if os.path.exists(xlsx_file):
+  df_init = pd.read_excel(xlsx_file, sheet_name='Q40_Soccer_Players', skiprows=3)
+  df_init.to_csv(csv_file, index=False)
+elif not os.path.exists(csv_file):
+  sample_data = [
+      ('Liam Vance', 26, 'Forward', 28, 85000),
+      ('Mateo Silva', 29, 'Forward', 34, 120000),
+      ('Noah Lindqvist', 22, 'Midfielder', 11, 52000),
+      ('Lucas Moretti', 31, 'Defender', 4, 78000),
+      ('Ethan Sterling', 24, 'Forward', 22, 74000),
+      ('Julian Brandt', 27, 'Midfielder', 15, 82000),
+      ('Santiago Cruz', 33, 'Goalkeeper', 0, 68000),
+      ('Gabriel Costa', 28, 'Forward', 31, 115000),
+      ('Henrik Larsen', 30, 'Defender', 3, 71000),
+      ('Rafael Mendes', 32, 'Midfielder', 9, 89000),
+      ('Marcus Weber', 29, 'Defender', 5, 76000),
+      ('Viktor Kovalenko', 31, 'Midfielder', 12, 84000),
+      ('Thomas Muller', 34, 'Midfielder', 16, 105000),
+      ('Andre Gomes', 28, 'Defender', 2, 69000),
+      ('Dante Rossi', 30, 'Forward', 29, 110000),
+      ('Carlos Mendoza', 26, 'Forward', 27, 98000),
+      ('Sebastian Ortiz', 29, 'Goalkeeper', 0, 64000),
+      ('Nicolai Petrov', 32, 'Defender', 4, 73000),
+      ('David Alaba', 31, 'Defender', 6, 92000),
+      ('Leo Fernandez', 21, 'Midfielder', 8, 41000),
+  ]
+  pd.DataFrame(
+      sample_data,
+      columns=[
+          'Player_Name',
+          'Age',
+          'Position',
+          'Goals_Scored',
+          'Weekly_Salary_USD',
+      ],
+  ).to_csv(csv_file, index=False)
+
+# 2. Read the dataset from the CSV file into a pandas DataFrame
+df = pd.read_csv(csv_file)
+
+# 3. Find Top 5 players with the highest number of goals scored
+top5_goals = df.nlargest(5, 'Goals_Scored')[
+    ['Player_Name', 'Position', 'Goals_Scored', 'Weekly_Salary_USD']
+]
+print('=== TOP 5 PLAYERS BY GOALS SCORED ===')
+print(top5_goals.to_string(index=False))
+print()
+
+# 4. Find Top 5 players with the highest weekly salaries
+top5_salaries = df.nlargest(5, 'Weekly_Salary_USD')[
+    ['Player_Name', 'Position', 'Weekly_Salary_USD', 'Goals_Scored']
+]
+print('=== TOP 5 PLAYERS BY WEEKLY SALARY ===')
+print(top5_salaries.to_string(index=False))
+print()
+
+# 5. Calculate average age and display players above the average age
+average_age = df['Age'].mean()
+above_avg_players = df[df['Age'] > average_age][
+    ['Player_Name', 'Age', 'Position']
+]
+
+print('=== AGE ANALYSIS ===')
+print(f'Average Player Age: {average_age:.2f} years')
+print(f'Players Above Average Age ({len(above_avg_players)} players):')
+print(above_avg_players.to_string(index=False))
+print()
+
+# 6. Visualize the distribution of players based on their positions (Bar Chart)
+position_counts = df['Position'].value_counts()
+
+plt.figure(figsize=(8, 5))
+colors = ['#2b5c8f', '#1b9e77', '#d95f02', '#7570b3']
+bars = plt.bar(
+    position_counts.index,
+    position_counts.values,
+    color=colors[: len(position_counts)],
+    edgecolor='black',
+    width=0.55,
+)
+
+plt.title('Distribution of Soccer Players by Position')
+plt.xlabel('Position')
+plt.ylabel('Number of Players')
+plt.ylim(0, position_counts.max() + 2)
+plt.grid(True, axis='y', linestyle='--', alpha=0.5)
+
+for bar in bars:
+  height = bar.get_height()
+  plt.text(
+      bar.get_x() + bar.get_width() / 2,
+      height + 0.2,
+      f'{int(height)}',
+      ha='center',
+      va='bottom',
+      fontweight='bold',
+  )
+
+plt.tight_layout()
+plt.show()
+
+Output:
+    Marcus Weber   29   Defender
+Viktor Kovalenko   31 Midfielder
+   Thomas Muller   34 Midfielder
+     Andre Gomes   28   Defender
+     Dante Rossi   30    Forward
+ Sebastian Ortiz   29 Goalkeeper
+  Nicolai Petrov   32   Defender
+     David Alaba   31   Defender
