@@ -1,0 +1,119 @@
+import os
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+
+# 1. Load the stock dataset (reads CSV if available, otherwise reads the Excel lab sheet)
+csv_file = 'stock_prices.csv'
+xlsx_file = 'FODS_Lab_Datasets_Q20_to_Q40.xlsx'
+
+if os.path.exists(csv_file):
+  df = pd.read_csv(csv_file)
+else:
+  df = pd.read_excel(xlsx_file, sheet_name='Q36_Stock_Prices', skiprows=3)
+
+df['Date'] = pd.to_datetime(df['Date'])
+df = df.sort_values('Date').reset_index(drop=True)
+
+# 2. Calculate Closing Price Variability Metrics
+close = df['Close']
+mean_price = close.mean()
+median_price = close.median()
+std_price = close.std()
+var_price = close.var()
+min_price = close.min()
+max_price = close.max()
+price_range = max_price - min_price
+iqr_price = close.quantile(0.75) - close.quantile(0.25)
+cv_price = (std_price / mean_price) * 100
+
+# 3. Calculate Daily Returns & Volatility
+df['Daily_Return_Pct'] = close.pct_change() * 100
+daily_volatility = df['Daily_Return_Pct'].std()
+annualized_volatility = daily_volatility * np.sqrt(252)
+net_return = ((close.iloc[-1] - close.iloc[0]) / close.iloc[0]) * 100
+
+min_date = df.loc[close.idxmin(), 'Date'].strftime('%Y-%m-%d')
+max_date = df.loc[close.idxmax(), 'Date'].strftime('%Y-%m-%d')
+best_day = df.loc[df['Daily_Return_Pct'].idxmax()]
+worst_day = df.loc[df['Daily_Return_Pct'].idxmin()]
+
+# 4. Display Variability Report & Insights
+print('=== STOCK PRICE VARIABILITY REPORT ===')
+print(
+    f"Period             : {df['Date'].iloc[0].strftime('%Y-%m-%d')} to"
+    f" {df['Date'].iloc[-1].strftime('%Y-%m-%d')} ({len(df)} trading days)"
+)
+print(f'Mean Close Price   : ${mean_price:.2f}')
+print(f'Median Close Price : ${median_price:.2f}')
+print(f'Standard Deviation : ${std_price:.2f}')
+print(f'Variance           : {var_price:.2f}')
+print(f'Coeff. of Variation: {cv_price:.2f}%')
+print(f'Price Range        : ${price_range:.2f} (Low: ${min_price:.2f} on {min_date} | High: ${max_price:.2f} on {max_date})')
+print(f'Interquartile Range: ${iqr_price:.2f}')
+print(f'Daily Volatility   : {daily_volatility:.2f}% (Annualized: {annualized_volatility:.2f}%)')
+
+print('\n=== KEY PRICE MOVEMENT INSIGHTS ===')
+print(f'1. Overall Trend : Net change of {net_return:+.2f}% (${close.iloc[0]:.2f} -> ${close.iloc[-1]:.2f}), showing mean-reverting swings.')
+print(f"2. Best Rally    : {best_day['Daily_Return_Pct']:+.2f}% on {best_day['Date'].strftime('%Y-%m-%d')} (Close: ${best_day['Close']:.2f}).")
+print(f"3. Sharpest Drop : {worst_day['Daily_Return_Pct']:+.2f}% on {worst_day['Date'].strftime('%Y-%m-%d')} (Close: ${worst_day['Close']:.2f}).")
+
+# 5. Visualize Closing Price, Rolling Volatility Band, and Daily Returns
+df['MA_7'] = close.rolling(window=7).mean()
+df['Rolling_Std_7'] = close.rolling(window=7).std()
+
+fig, axes = plt.subplots(
+    2, 1, figsize=(12, 7), sharex=True, gridspec_kw={'height_ratios': [2, 1]}
+)
+
+# Top Panel: Closing Price + Rolling Band
+axes[0].plot(
+    df['Date'], close, color='#2b5c8f', linewidth=2, marker='o', markersize=4, label='Daily Close Price'
+)
+axes[0].plot(
+    df['Date'], df['MA_7'], color='#d95f02', linestyle='--', linewidth=1.8, label='7-Day Moving Average'
+)
+axes[0].fill_between(
+    df['Date'],
+    df['MA_7'] - df['Rolling_Std_7'],
+    df['MA_7'] + df['Rolling_Std_7'],
+    color='#d95f02',
+    alpha=0.15,
+    label='±1 Rolling Std Dev Band',
+)
+axes[0].axhline(
+    mean_price, color='#1b9e77', linestyle=':', linewidth=1.5, label=f'Period Mean (${mean_price:.2f})'
+)
+axes[0].set_title('Company Closing Stock Price & 7-Day Rolling Variability')
+axes[0].set_ylabel('Closing Price ($)')
+axes[0].legend(loc='upper left', fontsize=9)
+axes[0].grid(True, linestyle='--', alpha=0.5)
+
+# Bottom Panel: Daily Percentage Returns
+bar_colors = ['#1b9e77' if r >= 0 else '#d95f02' for r in df['Daily_Return_Pct'].fillna(0)]
+axes[1].bar(df['Date'], df['Daily_Return_Pct'].fillna(0), color=bar_colors, alpha=0.85, width=0.8)
+axes[1].axhline(0, color='black', linewidth=1)
+axes[1].set_title(f'Daily Percentage Returns (Daily Volatility = {daily_volatility:.2f}%)')
+axes[1].set_xlabel('Trading Date')
+axes[1].set_ylabel('Daily Return (%)')
+axes[1].grid(True, linestyle='--', alpha=0.5)
+
+plt.tight_layout()
+plt.show()
+
+Output:
+=== STOCK PRICE VARIABILITY REPORT ===
+Period             : 2026-01-02 to 2026-03-26 (60 trading days)
+Mean Close Price   : $152.07
+Median Close Price : $151.80
+Standard Deviation : $5.01
+Variance           : 25.13
+Coeff. of Variation: 3.30%
+Price Range        : $23.33 (Low: $138.17 on 2026-01-28 | High: $161.50 on 2026-02-25)
+Interquartile Range: $5.64
+Daily Volatility   : 1.91% (Annualized: 30.31%)
+
+=== KEY PRICE MOVEMENT INSIGHTS ===
+1. Overall Trend : Net change of +0.60% ($147.62 -> $148.50), showing mean-reverting swings.
+2. Best Rally    : +4.46% on 2026-02-20 (Close: $154.77).
+3. Sharpest Drop : -3.32% on 2026-01-26 (Close: $141.49).
