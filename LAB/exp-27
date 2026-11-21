@@ -1,0 +1,85 @@
+import pandas as pd
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+
+# 1. Load the dataset (skipping the first 3 title/blank rows)
+file_path = 'FODS_Lab_Datasets_Q20_to_Q40.xlsx'
+df = pd.read_excel(file_path, sheet_name='Q27_Telco_Churn', skiprows=3)
+
+# 2. Define features (X) and target (y)
+feature_cols = [
+    'Usage_Minutes',
+    'Contract_Duration_Mo',
+    'Monthly_Bill_USD',
+    'Support_Calls',
+]
+X = df[feature_cols]
+y = df['Churn']
+
+# 3. Split data into training (80%) and testing (20%) sets
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
+
+# 4. Scale features for better Logistic Regression convergence
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+# 5. Train the Logistic Regression model
+model = LogisticRegression()
+model.fit(X_train_scaled, y_train)
+
+# Display model evaluation accuracy
+y_pred = model.predict(X_test_scaled)
+print(
+    f'Model trained successfully! Test Accuracy: {accuracy_score(y_test, y_pred) * 100:.2f}%\n'
+)
+
+# 6. Get input features for a new customer from the user
+print('--- Enter New Customer Details ---')
+try:
+  usage_minutes = float(input('Enter Usage Minutes (e.g., 350): '))
+  contract_duration = float(
+      input('Enter Contract Duration in Months (e.g., 12): ')
+  )
+  monthly_bill = float(input('Enter Monthly Bill in USD (e.g., 85.50): '))
+  support_calls = int(input('Enter Number of Support Calls (e.g., 2): '))
+
+  # Create a DataFrame matching the training feature names
+  new_customer = pd.DataFrame(
+      [[usage_minutes, contract_duration, monthly_bill, support_calls]],
+      columns=feature_cols,
+  )
+
+  # Scale the input using the fitted scaler and predict
+  new_customer_scaled = scaler.transform(new_customer)
+  prediction = model.predict(new_customer_scaled)[0]
+  probability = model.predict_proba(new_customer_scaled)[0][1]
+
+  # 7. Output the prediction
+  print('\n--- Prediction Result ---')
+  if prediction == 1:
+    print(f'Status: CHURN (1) - Customer is likely to leave.')
+  else:
+    print(f'Status: NOT CHURNED (0) - Customer is likely to stay.')
+  print(f'Probability of Churn: {probability * 100:.2f}%')
+
+except ValueError:
+  print('Invalid input. Please enter numeric values for all features.')
+
+  Output:
+  Model trained successfully! Test Accuracy: 78.57%
+
+--- Enter New Customer Details ---
+Enter Usage Minutes (e.g., 350): 296
+Enter Contract Duration in Months (e.g., 12): 2
+Enter Monthly Bill in USD (e.g., 85.50): 102.97
+Enter Number of Support Calls (e.g., 2): 1
+
+--- Prediction Result ---
+Status: NOT CHURNED (0) - Customer is likely to stay.
+Probability of Churn: 27.74%
+  
