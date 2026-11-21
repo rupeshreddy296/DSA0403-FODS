@@ -1,0 +1,59 @@
+import numpy as np
+import pandas as pd
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.model_selection import train_test_split
+
+# 1. Load the dataset from the Excel workbook
+file_path = "FODS_Lab_Datasets_Q20_to_Q40.xlsx"
+df = pd.read_excel(file_path, sheet_name="Q26_Housing_LinearReg", skiprows=3)
+
+# 2. Define input features (X) and target variable (y)
+feature_cols = ["Area_SqFt", "Bedrooms", "Location_Score", "House_Age_Yrs"]
+X = df[feature_cols]
+y = df["Price_USD"]
+
+# 3. Split into training (80%) and testing (20%) sets
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
+
+# 4. Train the Linear Regression model
+model = LinearRegression()
+model.fit(X_train, y_train)
+
+# Evaluate model accuracy on test split
+y_pred_test = model.predict(X_test)
+r2 = r2_score(y_test, y_pred_test)
+rmse = np.sqrt(mean_squared_error(y_test, y_pred_test))
+
+# 5. Get user input for a new house's features
+print("=== Experiment 26: Housing Price Prediction (Linear Regression) ===")
+print("Enter the features of the new house:")
+
+area = float(input("1. Area in Sq Ft (e.g., 850 - 3650): "))
+bedrooms = int(input("2. Number of Bedrooms (e.g., 1 - 6): "))
+location_score = float(input("3. Location Score (1 to 10): "))
+house_age = float(input("4. Age of the House in Years (e.g., 1 - 35): "))
+
+# 6. Predict the price of the new house
+new_house = pd.DataFrame(
+    [[area, bedrooms, location_score, house_age]], columns=feature_cols
+)
+predicted_price = model.predict(new_house)[0]
+
+# 7. Display results
+print("\n--- Model Performance & Prediction ---")
+print(f"Model R² Score: {r2:.4f} | Test RMSE: ${rmse:,.2f}")
+print(f"Predicted Housing Price: ${predicted_price:,.2f}")
+
+Output:
+Enter the features of the new house:
+1. Area in Sq Ft (e.g., 850 - 3650): 3113 
+2. Number of Bedrooms (e.g., 1 - 6): 4
+3. Location Score (1 to 10): 10
+4. Age of the House in Years (e.g., 1 - 35): 24
+
+--- Model Performance & Prediction ---
+Model R² Score: 0.9849 | Test RMSE: $16,510.50
+Predicted Housing Price: $723,460.83
