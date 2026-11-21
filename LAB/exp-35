@@ -1,0 +1,122 @@
+import matplotlib.pyplot as plt
+import pandas as pd
+from sklearn.cluster import KMeans
+from sklearn.metrics import silhouette_score
+from sklearn.preprocessing import StandardScaler
+
+# 1. Load the dataset (skipping the first 3 title/blank rows)
+file_path = 'FODS_Lab_Datasets_Q20_to_Q40.xlsx'
+df = pd.read_excel(file_path, sheet_name='Q35_Retail_Store_KMeans', skiprows=3)
+
+# 2. Select spending and frequency features
+feature_cols = ['Total_Amount_Spent', 'Visit_Frequency']
+X = df[feature_cols]
+
+# 3. Standardize features so dollar amounts and visit counts carry equal weight
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+
+# 4. Determine optimal k using Inertia (Elbow Method) and Silhouette Score
+print('--- Cluster Validation Across k ---')
+ks = range(2, 6)
+inertias, silhouettes = [], []
+for k in ks:
+  km = KMeans(n_clusters=k, random_state=42, n_init=10)
+  labels = km.fit_predict(X_scaled)
+  inertias.append(km.inertia_)
+  sil = silhouette_score(X_scaled, labels)
+  silhouettes.append(sil)
+  print(f'k = {k} | Inertia: {km.inertia_:6.2f} | Silhouette Score: {sil:.4f}')
+
+# 5. Fit final K-Means model (k = 3)
+k_optimal = 3
+kmeans = KMeans(n_clusters=k_optimal, random_state=42, n_init=10)
+df['Segment'] = kmeans.fit_predict(X_scaled)
+
+# 6. Display segment profiles and branch breakdown
+summary = df.groupby('Segment')[feature_cols].agg(['mean', 'median', 'min', 'max'])
+print('\n--- Segment Summary Statistics ---')
+print(summary.round(2))
+
+print('\n--- Customer Count by Segment & Store Branch ---')
+print(pd.crosstab(df['Segment'], df['Store_Branch'], margins=True))
+
+# 7. Visualize Elbow/Silhouette curve and Customer Segments
+fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+
+# Left Panel: Optimal k selection
+ax1 = axes[0]
+ax1.plot(ks, inertias, 'o-', color='#2b5c8f', linewidth=2, label='Inertia')
+ax1.set_title('Optimal k Selection (Elbow & Silhouette)')
+ax1.set_xlabel('Number of Clusters (k)')
+ax1.set_ylabel('Inertia (WCSS)', color='#2b5c8f')
+ax1.set_xticks(list(ks))
+ax1.grid(True, linestyle='--', alpha=0.5)
+
+ax1_twin = ax1.twinx()
+ax1_twin.plot(ks, silhouettes, 's--', color='#d95f02', linewidth=2, label='Silhouette')
+ax1_twin.set_ylabel('Silhouette Score', color='#d95f02')
+
+# Right Panel: Customer Segments + Centroids
+colors = ['#2b5c8f', '#1b9e77', '#d95f02']
+segment_names = {
+    0: 'Segment 0: Regular Mid-Tier Shoppers',
+    1: 'Segment 1: High-Value Loyalists',
+    2: 'Segment 2: Low-Spend Occasional Visitors',
+}
+
+for seg in sorted(df['Segment'].unique()):
+  subset = df[df['Segment'] == seg]
+  axes[1].scatter(
+      subset['Visit_Frequency'],
+      subset['Total_Amount_Spent'],
+      c=colors[seg],
+      label=segment_names[seg],
+      s=65,
+      alpha=0.85,
+      edgecolors='k',
+  )
+
+centroids_orig = scaler.inverse_transform(kmeans.cluster_centers_)
+axes[1].scatter(
+    centroids_orig[:, 1],
+    centroids_orig[:, 0],
+    c='yellow',
+    marker='X',
+    s=220,
+    edgecolors='black',
+    linewidth=1.5,
+    label='Cluster Centroids',
+)
+
+axes[1].set_title('Retail Customer Segments (k = 3)')
+axes[1].set_xlabel('Visit Frequency')
+axes[1].set_ylabel('Total Amount Spent ($)')
+axes[1].legend(fontsize=8)
+axes[1].grid(True, linestyle='--', alpha=0.5)
+
+plt.tight_layout()
+plt.show()
+
+Output:
+--- Cluster Validation Across k ---
+k = 2 | Inertia:  34.44 | Silhouette Score: 0.6699
+k = 3 | Inertia:  12.75 | Silhouette Score: 0.6939
+k = 4 | Inertia:   9.04 | Silhouette Score: 0.6359
+k = 5 | Inertia:   6.75 | Silhouette Score: 0.6490
+
+--- Segment Summary Statistics ---
+        Total_Amount_Spent                           Visit_Frequency               
+                      mean   median     min      max            mean median min max
+Segment                                                                            
+0                   566.73   564.73  416.02   743.78           10.68   12.0   6  14
+1                  1259.98  1241.92  948.36  1725.51           23.30   24.0  16  31
+2                   125.75   133.50   55.17   208.53            2.56    2.0   1   4
+
+--- Customer Count by Segment & Store Branch ---
+Store_Branch  Central  North  South  All
+Segment                                 
+0                   7     10      8   25
+1                  10      4      6   20
+2                   5      8     12   25
+All                22     22     26   70
