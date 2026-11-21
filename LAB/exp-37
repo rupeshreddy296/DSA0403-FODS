@@ -1,0 +1,145 @@
+import matplotlib.pyplot as plt
+import pandas as pd
+from scipy import stats
+import seaborn as sns
+
+# 1. Load the dataset (skipping the first 3 title/blank rows)
+file_path = 'FODS_Lab_Datasets_Q20_to_Q40.xlsx'
+df = pd.read_excel(file_path, sheet_name='Q37_Study_Exam_Corr', skiprows=3)
+
+# 2. Compute Summary Statistics & Correlation Coefficients
+print('--- Summary Statistics ---')
+print(df[['Study_Time_Hours', 'Exam_Score']].describe().round(2))
+print()
+
+r_pearson, p_pearson = stats.pearsonr(df['Study_Time_Hours'], df['Exam_Score'])
+r_spearman, p_spearman = stats.spearmanr(
+    df['Study_Time_Hours'], df['Exam_Score']
+)
+slope, intercept, _, _, _ = stats.linregress(
+    df['Study_Time_Hours'], df['Exam_Score']
+)
+
+print('--- Correlation & Linear Fit Results ---')
+print(f'Pearson Correlation (r)   : {r_pearson:.4f} (p-value = {p_pearson:.4e})')
+print(
+    f'Spearman Correlation (ρ)  : {r_spearman:.4f} (p-value ='
+    f' {p_spearman:.4e})'
+)
+print(f'Coefficient of Det. (R²)  : {r_pearson**2:.4f}')
+print(
+    f'Linear Regression Line    : Exam_Score = {slope:.2f} * Study_Time_Hours +'
+    f' {intercept:.2f}'
+)
+
+# 3. Explore Multiple Plotting Functions in a 2x2 Dashboard
+fig, axes = plt.subplots(2, 2, figsize=(12, 10))
+
+# Plot 1: Scatter Plot with Regression Line & 95% Confidence Interval (sns.regplot)
+sns.regplot(
+    data=df,
+    x='Study_Time_Hours',
+    y='Exam_Score',
+    ax=axes[0, 0],
+    scatter_kws={'color': '#2b5c8f', 'alpha': 0.8, 's': 55, 'edgecolor': 'k'},
+    line_kws={
+        'color': '#d95f02',
+        'linewidth': 2,
+        'label': f'Fit: y = {slope:.2f}x + {intercept:.2f}',
+    },
+)
+axes[0, 0].set_title(f'1. Scatter & Regression Fit (Pearson r = {r_pearson:.4f})')
+axes[0, 0].set_xlabel('Study Time (Hours)')
+axes[0, 0].set_ylabel('Exam Score')
+axes[0, 0].legend(loc='upper left')
+axes[0, 0].grid(True, linestyle='--', alpha=0.5)
+
+# Plot 2: 2D KDE Contour Plot + Scatter Overlay (sns.kdeplot)
+sns.kdeplot(
+    data=df,
+    x='Study_Time_Hours',
+    y='Exam_Score',
+    ax=axes[0, 1],
+    fill=True,
+    cmap='Blues',
+    levels=8,
+    thresh=0.05,
+)
+axes[0, 1].scatter(
+    df['Study_Time_Hours'],
+    df['Exam_Score'],
+    color='#1b9e77',
+    s=30,
+    alpha=0.85,
+    edgecolors='k',
+)
+axes[0, 1].set_title('2. Bivariate KDE Density & Scatter Overlay')
+axes[0, 1].set_xlabel('Study Time (Hours)')
+axes[0, 1].set_ylabel('Exam Score')
+axes[0, 1].grid(True, linestyle='--', alpha=0.5)
+
+# Plot 3: Binned Study Tiers Boxplot + Strip Plot (sns.boxplot & sns.stripplot)
+df['Study_Tier'] = pd.cut(
+    df['Study_Time_Hours'],
+    bins=[0, 4, 8, 12],
+    labels=['Low (1–4 hrs)', 'Moderate (4–8 hrs)', 'High (8–12 hrs)'],
+)
+sns.boxplot(
+    data=df,
+    x='Study_Tier',
+    y='Exam_Score',
+    hue='Study_Tier',
+    ax=axes[1, 0],
+    palette=['#d95f02', '#7570b3', '#1b9e77'],
+    width=0.5,
+    legend=False,
+)
+sns.stripplot(
+    data=df,
+    x='Study_Tier',
+    y='Exam_Score',
+    ax=axes[1, 0],
+    color='black',
+    size=5,
+    alpha=0.7,
+)
+axes[1, 0].set_title('3. Exam Score Distribution by Study Tier (Boxplot)')
+axes[1, 0].set_xlabel('Study Time Tier')
+axes[1, 0].set_ylabel('Exam Score')
+axes[1, 0].grid(True, axis='y', linestyle='--', alpha=0.5)
+
+# Plot 4: Correlation Matrix Heatmap (sns.heatmap)
+corr_matrix = df[['Study_Time_Hours', 'Exam_Score']].corr()
+sns.heatmap(
+    corr_matrix,
+    annot=True,
+    fmt='.4f',
+    cmap='coolwarm',
+    vmin=-1,
+    vmax=1,
+    ax=axes[1, 1],
+    cbar_kws={'shrink': 0.8},
+    annot_kws={'size': 12, 'weight': 'bold'},
+)
+axes[1, 1].set_title('4. Pearson Correlation Matrix Heatmap')
+
+plt.tight_layout()
+plt.show()
+
+Output:
+--- Summary Statistics ---
+       Study_Time_Hours  Exam_Score
+count             50.00       50.00
+mean               6.71       72.77
+std                3.30       16.44
+min                1.20       42.50
+25%                3.65       59.62
+50%                7.40       73.90
+75%                9.48       86.80
+max               11.90      100.00
+
+--- Correlation & Linear Fit Results ---
+Pearson Correlation (r)   : 0.9441 (p-value = 9.0589e-25)
+Spearman Correlation (ρ)  : 0.9379 (p-value = 1.0558e-23)
+Coefficient of Det. (R²)  : 0.8913
+Linear Regression Line    : Exam_Score = 4.71 * Study_Time_Hours + 41.21
