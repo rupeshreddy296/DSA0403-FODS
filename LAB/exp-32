@@ -1,0 +1,116 @@
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from scipy import stats
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from sklearn.model_selection import train_test_split
+
+# 1. Load the dataset (skipping the first 3 title/blank rows)
+file_path = 'FODS_Lab_Datasets_Q20_to_Q40.xlsx'
+df = pd.read_excel(file_path, sheet_name='Q32_RealEstate_Bivariate', skiprows=3)
+
+# 2. Bivariate Analysis (Summary Stats & Pearson Correlation)
+print('--- Summary Statistics ---')
+print(df[['House_Size_SqFt', 'Bedrooms', 'House_Price_USD']].describe().round(2))
+print()
+
+r_size, p_size = stats.pearsonr(df['House_Size_SqFt'], df['House_Price_USD'])
+r_bed, p_bed = stats.pearsonr(df['Bedrooms'], df['House_Price_USD'])
+
+print('--- Bivariate Correlation with House Price ---')
+print(f'House_Size_SqFt : Pearson r = {r_size:.4f} (p-value = {p_size:.4e})')
+print(f'Bedrooms        : Pearson r = {r_bed:.4f} (p-value = {p_bed:.4e})\n')
+
+# 3. Prepare Feature (House_Size_SqFt) and Target (House_Price_USD)
+X = df[['House_Size_SqFt']]
+y = df['House_Price_USD']
+
+# Split data into 80% training and 20% testing sets
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
+
+# 4. Build and Train the Linear Regression Model
+model = LinearRegression()
+model.fit(X_train, y_train)
+
+slope = model.coef_[0]
+intercept = model.intercept_
+print('--- Linear Regression Model ---')
+print(f'Equation: House_Price_USD = {slope:.2f} * House_Size_SqFt + {intercept:.2f}\n')
+
+# 5. Evaluate Model Performance on Test Data
+y_pred = model.predict(X_test)
+mae = mean_absolute_error(y_test, y_pred)
+rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+r2 = r2_score(y_test, y_pred)
+
+print('--- Model Performance Evaluation (Test Set) ---')
+print(f'R-squared (R²) : {r2:.4f}')
+print(f'MAE            : ${mae:,.2f}')
+print(f'RMSE           : ${rmse:,.2f}\n')
+
+# Example prediction for a 2,500 sq. ft. house
+sample_size = pd.DataFrame([[2500]], columns=['House_Size_SqFt'])
+print(f'Estimated Price for a 2,500 sq. ft. house: ${model.predict(sample_size)[0]:,.2f}')
+
+# 6. Visualize Regression Fit and Residuals
+fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+
+# Left Panel: Scatter Plot + Fitted Regression Line
+axes[0].scatter(X_train, y_train, color='#2b5c8f', alpha=0.75, label='Training Data')
+axes[0].scatter(X_test, y_test, color='#d95f02', alpha=0.9, label='Test Data')
+x_range = pd.DataFrame(
+    np.linspace(df['House_Size_SqFt'].min(), df['House_Size_SqFt'].max(), 100),
+    columns=['House_Size_SqFt'],
+)
+axes[0].plot(
+    x_range,
+    model.predict(x_range),
+    color='#1b9e77',
+    linewidth=2,
+    label=f'Fit: y = {slope:.2f}x + {intercept:.0f}',
+)
+axes[0].set_title(f'House Size vs. Price (r = {r_size:.4f})')
+axes[0].set_xlabel('House Size (Sq. Ft.)')
+axes[0].set_ylabel('House Price (USD)')
+axes[0].legend()
+axes[0].grid(True, linestyle='--', alpha=0.5)
+
+# Right Panel: Residual Diagnostic Plot
+residuals = y_test - y_pred
+axes[1].scatter(y_pred, residuals, color='#7570b3', alpha=0.85, edgecolors='k')
+axes[1].axhline(0, color='red', linestyle='--', linewidth=1.5)
+axes[1].set_title('Residual Plot (Test Set)')
+axes[1].set_xlabel('Predicted House Price (USD)')
+axes[1].set_ylabel('Residuals (Actual - Predicted)')
+axes[1].grid(True, linestyle='--', alpha=0.5)
+
+plt.tight_layout()
+plt.show()
+Output:
+--- Summary Statistics ---
+       House_Size_SqFt  Bedrooms  House_Price_USD
+count            60.00     60.00            60.00
+mean           2176.35      3.08        397538.33
+std             901.95      1.53        149119.19
+min             659.00      1.00        150500.00
+25%            1304.25      1.75        237050.00
+50%            2298.00      3.00        426500.00
+75%            2916.25      4.25        510875.00
+max            3482.00      5.00        617100.00
+
+--- Bivariate Correlation with House Price ---
+House_Size_SqFt : Pearson r = 0.9953 (p-value = 1.4925e-60)
+Bedrooms        : Pearson r = 0.9818 (p-value = 1.6288e-43)
+
+--- Linear Regression Model ---
+Equation: House_Price_USD = 163.01 * House_Size_SqFt + 42321.15
+
+--- Model Performance Evaluation (Test Set) ---
+R-squared (R²) : 0.9933
+MAE            : $11,679.78
+RMSE           : $14,275.49
+
+Estimated Price for a 2,500 sq. ft. house: $449,851.91
