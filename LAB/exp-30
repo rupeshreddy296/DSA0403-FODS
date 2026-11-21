@@ -1,0 +1,109 @@
+import pandas as pd
+from sklearn.metrics import mean_absolute_error, r2_score
+from sklearn.model_selection import train_test_split
+from sklearn.tree import DecisionTreeRegressor
+
+# 1. Load the dataset (skipping the first 3 title/blank rows)
+file_path = 'FODS_Lab_Datasets_Q20_to_Q40.xlsx'
+df = pd.read_excel(file_path, sheet_name='Q30_Used_Cars_CART', skiprows=3)
+
+# 2. Prepare features (One-Hot Encoding for categorical columns) and target
+feature_cols = ['Brand', 'Engine_Type', 'Age_Years', 'Mileage_Km']
+X = pd.get_dummies(df[feature_cols], drop_first=False)
+y = df['Selling_Price_USD']
+
+# 3. Split data into training (80%) and testing (20%) sets
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
+
+# 4. Train the CART Regression Tree model
+cart_model = DecisionTreeRegressor(max_depth=4, random_state=42)
+cart_model.fit(X_train, y_train)
+
+# Evaluate model performance on test data
+y_pred = cart_model.predict(X_test)
+print(
+    f'CART Model Trained | Test R² Score: {r2_score(y_test, y_pred):.2f} | MAE:'
+    f' ${mean_absolute_error(y_test, y_pred):,.2f}\n'
+)
+
+# 5. Get input features for a new car from the user
+print('--- Enter New Car Details ---')
+print(f"Available Brands       : {', '.join(df['Brand'].unique())}")
+print(f"Available Engine Types : {', '.join(df['Engine_Type'].unique())}\n")
+
+try:
+  brand = input('Enter Car Brand (e.g., Toyota): ').strip()
+  engine_type = input('Enter Engine Type (e.g., Petrol): ').strip()
+  age_years = int(input('Enter Car Age in Years (e.g., 5): '))
+  mileage_km = float(input('Enter Car Mileage in Km (e.g., 45000): '))
+
+  # Format user input and align columns with training data
+  new_car = pd.DataFrame([{
+      'Brand': brand,
+      'Engine_Type': engine_type,
+      'Age_Years': age_years,
+      'Mileage_Km': mileage_km,
+  }])
+  new_car_encoded = pd.get_dummies(new_car).reindex(
+      columns=X.columns, fill_value=0
+  )
+
+  # 6. Predict the selling price
+  predicted_price = cart_model.predict(new_car_encoded)[0]
+  print('\n--- Prediction Result ---')
+  print(f'Predicted Selling Price: ${predicted_price:,.2f}')
+
+  # 7. Extract and display the decision path
+  node_indicator = cart_model.decision_path(new_car_encoded)
+  leaf_id = cart_model.apply(new_car_encoded)[0]
+
+  feature_indices = cart_model.tree_.feature
+  thresholds = cart_model.tree_.threshold
+  node_indices = node_indicator.indices[
+      node_indicator.indptr[0] : node_indicator.indptr[1]
+  ]
+
+  print('\n--- CART Decision Path ---')
+  for step, node_id in enumerate(node_indices, start=1):
+    if node_id == leaf_id:
+      leaf_value = cart_model.tree_.value[node_id][0][0]
+      print(
+          f'Step {step} [Leaf Node {node_id}]: Reached terminal node ->'
+          f' Predicted Price = ${leaf_value:,.2f}'
+      )
+    else:
+      feat_name = X.columns[feature_indices[node_id]]
+      feat_val = new_car_encoded.iloc[0, feature_indices[node_id]]
+      thresh_val = thresholds[node_id]
+      operator = '<=' if feat_val <= thresh_val else '>'
+      print(
+          f'Step {step} [Node {node_id}]: {feat_name} ({feat_val}) {operator}'
+          f' {thresh_val:.2f}'
+      )
+
+except ValueError:
+  print('Invalid input. Please enter numeric values for Age and Mileage.')
+  Output:
+  CART Model Trained | Test R² Score: 0.55 | MAE: $4,355.81
+
+--- Enter New Car Details ---
+Available Brands       : BMW, Toyota, Honda, Ford
+Available Engine Types : Diesel, Petrol, Hybrid
+
+Enter Car Brand (e.g., Toyota): BMW
+Enter Engine Type (e.g., Petrol): Deisel
+Enter Car Age in Years (e.g., 5): 6
+Enter Car Mileage in Km (e.g., 45000): 78792
+
+--- Prediction Result ---
+Predicted Selling Price: $29,500.00
+
+--- CART Decision Path ---
+Step 1 [Node 0]: Age_Years (6) <= 7.50
+Step 2 [Node 1]: Mileage_Km (78792.0) > 31510.50
+Step 3 [Node 9]: Brand_BMW (True) > 0.50
+Step 4 [Node 13]: Engine_Type_Petrol (0) <= 0.50
+Step 5 [Leaf Node 14]: Reached terminal node -> Predicted Price = $29,500.00
+  
