@@ -1,0 +1,81 @@
+import pandas as pd
+from sklearn.metrics import accuracy_score
+from sklearn.model_selection import train_test_split
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.preprocessing import StandardScaler
+
+# 1. Load the dataset from the Excel workbook
+file_path = "FODS_Lab_Datasets_Q20_to_Q40.xlsx"
+df = pd.read_excel(file_path, sheet_name="Q24_Medical_KNN", skiprows=3)
+
+# 2. Define features (X) and target label (y)
+feature_cols = ["Body_Temp_F", "Cough_Severity", "Fatigue_Score", "WBC_Count"]
+X = df[feature_cols]
+y = df["Condition"]
+
+# 3. Split into training and testing sets and apply feature scaling
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42, stratify=y
+)
+
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+# 4. Get user input for new patient features and k
+print("=== Experiment 24: Medical Condition Prediction (KNN Classifier) ===")
+print("Enter the new patient's symptom details:")
+
+body_temp = float(input("1. Body Temperature in °F (e.g., 98.6 - 103.5): "))
+cough_severity = float(input("2. Cough Severity (0 to 10): "))
+fatigue_score = float(input("3. Fatigue Score (0 to 10): "))
+wbc_count = float(input("4. WBC Count (e.g., 4.0 - 15.0): "))
+k = int(input("5. Enter the number of neighbors (k, e.g., 3, 5, 7): "))
+
+# Validate k against training sample size
+if k < 1 or k > len(X_train):
+  raise ValueError(f"k must be between 1 and {len(X_train)}.")
+
+# 5. Train the KNN Classifier
+knn = KNeighborsClassifier(n_neighbors=k)
+knn.fit(X_train_scaled, y_train)
+
+# Evaluate model accuracy on the test split
+y_pred_test = knn.predict(X_test_scaled)
+test_acc = accuracy_score(y_test, y_pred_test)
+
+# 6. Predict condition for the new patient
+new_patient = pd.DataFrame(
+    [[body_temp, cough_severity, fatigue_score, wbc_count]],
+    columns=feature_cols,
+)
+new_patient_scaled = scaler.transform(new_patient)
+
+prediction = knn.predict(new_patient_scaled)[0]
+probabilities = knn.predict_proba(new_patient_scaled)[0]
+
+# 7. Display results
+print("\n--- Prediction Result ---")
+print(f"Model Test Accuracy (k={k}): {test_acc * 100:.2f}%")
+print(
+    f"Predicted Class: {prediction} ->"
+    f" {'Condition Present (Positive)' if prediction == 1 else 'No Condition (Negative)'}"
+)
+print(
+    f"Class Probabilities: No Condition (0) = {probabilities[0]:.2f} |"
+    f" Condition (1) = {probabilities[1]:.2f}"
+)
+Ouput:
+
+=== Experiment 24: Medical Condition Prediction (KNN Classifier) ===
+Enter the new patient's symptom details:
+1. Body Temperature in °F (e.g., 98.6 - 103.5): 99
+2. Cough Severity (0 to 10): 6
+3. Fatigue Score (0 to 10): 7
+4. WBC Count (e.g., 4.0 - 15.0): 8.63
+5. Enter the number of neighbors (k, e.g., 3, 5, 7): 3
+
+--- Prediction Result ---
+Model Test Accuracy (k=3): 75.00%
+Predicted Class: 1 -> Condition Present (Positive)
+Class Probabilities: No Condition (0) = 0.00 | Condition (1) = 1.00
