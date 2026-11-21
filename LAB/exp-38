@@ -1,0 +1,88 @@
+import matplotlib.pyplot as plt
+import pandas as pd
+
+# 1. Load the dataset (skipping the first 3 title/blank rows)
+file_path = 'FODS_Lab_Datasets_Q20_to_Q40.xlsx'
+df = pd.read_excel(file_path, sheet_name='Q38_City_Temperatures', skiprows=3)
+df['Date'] = pd.to_datetime(df['Date'])
+
+city_cols = [
+    'Chennai_Temp_C',
+    'Delhi_Temp_C',
+    'Bangalore_Temp_C',
+    'Shimla_Temp_C',
+]
+city_names = [col.replace('_Temp_C', '') for col in city_cols]
+
+# 2. Calculate Mean, Standard Deviation, Min, Max, and Temperature Range
+stats_df = pd.DataFrame(index=city_names)
+stats_df['Mean_Temp_C'] = [df[col].mean() for col in city_cols]
+stats_df['Std_Dev_C'] = [df[col].std() for col in city_cols]
+stats_df['Min_Temp_C'] = [df[col].min() for col in city_cols]
+stats_df['Max_Temp_C'] = [df[col].max() for col in city_cols]
+stats_df['Temp_Range_C'] = stats_df['Max_Temp_C'] - stats_df['Min_Temp_C']
+
+print('=== CITY TEMPERATURE VARIABILITY SUMMARY (365 DAYS) ===')
+print(stats_df.round(2))
+print()
+
+# 3. Determine city with highest temperature range & most consistent temperature
+highest_range_city = stats_df['Temp_Range_C'].idxmax()
+highest_range_val = stats_df.loc[highest_range_city, 'Temp_Range_C']
+
+most_consistent_city = stats_df['Std_Dev_C'].idxmin()
+lowest_std_val = stats_df.loc[most_consistent_city, 'Std_Dev_C']
+
+print('=== KEY FINDINGS ===')
+print(
+    f'City with Highest Temperature Range   : {highest_range_city}'
+    f' ({highest_range_val:.2f}°C)'
+)
+print(
+    f'City with Most Consistent Temperature : {most_consistent_city} (Std Dev'
+    f' = {lowest_std_val:.2f}°C)'
+)
+
+# 4. Visualize Annual Temperature Trends and Variability
+fig, axes = plt.subplots(1, 2, figsize=(13, 5))
+colors = ['#d95f02', '#2b5c8f', '#1b9e77', '#7570b3']
+
+# Left Panel: 14-Day Moving Average Temperature Trends
+for col, name, color in zip(city_cols, city_names, colors):
+  axes[0].plot(
+      df['Date'],
+      df[col].rolling(window=14, min_periods=1).mean(),
+      label=name,
+      color=color,
+      linewidth=2,
+  )
+axes[0].set_title('Annual Temperature Trends (14-Day Moving Average)')
+axes[0].set_xlabel('Date (2025)')
+axes[0].set_ylabel('Temperature (°C)')
+axes[0].legend()
+axes[0].grid(True, linestyle='--', alpha=0.5)
+
+# Right Panel: Boxplot Comparing Annual Distributions & Ranges
+bp = axes[1].boxplot([df[col] for col in city_cols], patch_artist=True, widths=0.5)
+axes[1].set_xticklabels(city_names)
+for patch, color in zip(bp['boxes'], colors):
+  patch.set_facecolor(color)
+  patch.set_alpha(0.75)
+axes[1].set_title('Temperature Variability & Range by City')
+axes[1].set_xlabel('City')
+axes[1].set_ylabel('Daily Temperature (°C)')
+axes[1].grid(True, axis='y', linestyle='--', alpha=0.5)
+
+plt.tight_layout()
+plt.show()
+
+Output:
+           Mean_Temp_C  Std_Dev_C  Min_Temp_C  Max_Temp_C  Temp_Range_C
+Chennai          29.50       2.74        24.0        35.6          11.6
+Delhi            25.05       8.26        11.2        40.3          29.1
+Bangalore        23.44       2.19        18.2        28.9          10.7
+Shimla           14.11       6.93         0.9        26.6          25.7
+
+=== KEY FINDINGS ===
+City with Highest Temperature Range   : Delhi (29.10°C)
+City with Most Consistent Temperature : Bangalore (Std Dev = 2.19°C)
