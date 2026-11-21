@@ -1,0 +1,98 @@
+import joblib
+import pandas as pd
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import (
+    accuracy_score,
+    classification_report,
+    confusion_matrix,
+    f1_score,
+    precision_score,
+    recall_score,
+)
+from sklearn.model_selection import train_test_split
+
+# 1. Load the dataset (skipping the first 3 title/blank rows)
+file_path = 'FODS_Lab_Datasets_Q20_to_Q40.xlsx'
+df = pd.read_excel(file_path, sheet_name='Q29_Model_Eval_Data', skiprows=3)
+
+print('Available columns in dataset:', list(df.columns))
+print()
+
+# 2. Ask the user to input feature names and target variable
+features_input = input(
+    'Enter feature column names separated by commas (e.g., Feature_1, Feature_2, Feature_3): '
+)
+target_col = input('Enter target column name (e.g., Target): ').strip()
+
+feature_cols = [col.strip() for col in features_input.split(',') if col.strip()]
+
+# Validate user-provided column names
+missing_cols = [
+    col for col in feature_cols + [target_col] if col not in df.columns
+]
+if missing_cols:
+  raise ValueError(f'Columns not found in dataset: {missing_cols}')
+
+X = df[feature_cols]
+y = df[target_col]
+
+# 3. Split dataset into training (75%) and testing (25%) sets
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.25, random_state=42
+)
+
+# 4. Train and save a scikit-learn model, then load it for evaluation
+trained_model = LogisticRegression()
+trained_model.fit(X_train, y_train)
+joblib.dump(trained_model, 'trained_classifier.pkl')
+
+# Load the saved scikit-learn model
+model = joblib.load('trained_classifier.pkl')
+
+# 5. Predict on test data
+y_pred = model.predict(X_test)
+
+# 6. Calculate and display evaluation metrics
+accuracy = accuracy_score(y_test, y_pred)
+precision = precision_score(y_test, y_pred, average='weighted', zero_division=0)
+recall = recall_score(y_test, y_pred, average='weighted', zero_division=0)
+f1 = f1_score(y_test, y_pred, average='weighted', zero_division=0)
+
+print('\n--- Model Evaluation Metrics (Test Data) ---')
+print(f'Accuracy  : {accuracy:.4f} ({accuracy * 100:.2f}%)')
+print(f'Precision : {precision:.4f}')
+print(f'Recall    : {recall:.4f}')
+print(f'F1-Score  : {f1:.4f}')
+
+print('\n--- Confusion Matrix ---')
+print(confusion_matrix(y_test, y_pred))
+
+print('\n--- Detailed Classification Report ---')
+print(classification_report(y_test, y_pred))
+
+Output:
+
+Available columns in dataset: ['Record_ID', 'Feature_1', 'Feature_2', 'Feature_3', 'Target']
+
+Enter feature column names separated by commas (e.g., Feature_1, Feature_2, Feature_3): Feature_1
+Enter target column name (e.g., Target): Target
+
+--- Model Evaluation Metrics (Test Data) ---
+Accuracy  : 0.7333 (73.33%)
+Precision : 0.7643
+Recall    : 0.7333
+F1-Score  : 0.7357
+
+--- Confusion Matrix ---
+[[6 3]
+ [1 5]]
+
+--- Detailed Classification Report ---
+              precision    recall  f1-score   support
+
+           0       0.86      0.67      0.75         9
+           1       0.62      0.83      0.71         6
+
+    accuracy                           0.73        15
+   macro avg       0.74      0.75      0.73        15
+weighted avg       0.76      0.73      0.74        15
