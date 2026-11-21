@@ -1,0 +1,121 @@
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+
+# 1. Load the dataset (skipping the first 3 title/blank rows)
+file_path = 'FODS_Lab_Datasets_Q20_to_Q40.xlsx'
+df = pd.read_excel(file_path, sheet_name='Q33_Car_Price_MultiReg', skiprows=3)
+
+# 2. Select features (X) and target (y)
+feature_cols = [
+    'Engine_Size_L',
+    'Horsepower',
+    'Fuel_Efficiency_MPG',
+    'Curb_Weight_lbs',
+]
+X = df[feature_cols]
+y = df['Car_Price_USD']
+
+# 3. Split data into training (80%) and testing (20%) sets
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
+
+# 4. Fit Multiple Linear Regression model (raw units for price equation)
+model = LinearRegression()
+model.fit(X_train, y_train)
+
+print('--- Multiple Linear Regression Coefficients (Raw Units) ---')
+print(f'Intercept : ${model.intercept_:,.2f}')
+for feat, coef in zip(feature_cols, model.coef_):
+  print(f'{feat:<22}: {coef:+.4f}')
+print()
+
+# 5. Evaluate model performance on test data
+y_pred = model.predict(X_test)
+mae = mean_absolute_error(y_test, y_pred)
+rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+r2 = r2_score(y_test, y_pred)
+
+print('--- Model Evaluation Metrics (Test Data) ---')
+print(f'R-squared (R²) : {r2:.4f}')
+print(f'MAE            : ${mae:,.2f}')
+print(f'RMSE           : ${rmse:,.2f}\n')
+
+# 6. Fit standardized regression to rank true feature influence across different scales
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+std_model = LinearRegression()
+std_model.fit(X_train_scaled, y_train)
+
+influence_df = pd.DataFrame({
+    'Feature': feature_cols,
+    'Raw_Coef': model.coef_,
+    'Standardized_Impact_USD': std_model.coef_,
+    'Abs_Impact': np.abs(std_model.coef_),
+}).sort_values(by='Abs_Impact', ascending=False)
+
+print('--- Ranked Feature Influence (Marketing Insights) ---')
+print(
+    influence_df[['Feature', 'Raw_Coef', 'Standardized_Impact_USD']].to_string(
+        index=False
+    )
+)
+
+# 7. Visualize Actual vs. Predicted Prices and Feature Importance
+fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+
+# Left Panel: Actual vs Predicted
+axes[0].scatter(y_test, y_pred, color='#2b5c8f', alpha=0.85, edgecolors='k', s=65)
+lims = [min(y_test.min(), y_pred.min()), max(y_test.max(), y_pred.max())]
+axes[0].plot(lims, lims, 'r--', linewidth=1.5, label='Perfect Prediction')
+axes[0].set_title(f'Actual vs. Predicted Car Price (R² = {r2:.4f})')
+axes[0].set_xlabel('Actual Car Price (USD)')
+axes[0].set_ylabel('Predicted Car Price (USD)')
+axes[0].legend()
+axes[0].grid(True, linestyle='--', alpha=0.5)
+
+# Right Panel: Standardized Feature Influence
+plot_df = influence_df.sort_values(by='Abs_Impact', ascending=True)
+colors = [
+    '#1b9e77' if val >= 0 else '#d95f02'
+    for val in plot_df['Standardized_Impact_USD']
+]
+axes[1].barh(
+    plot_df['Feature'],
+    plot_df['Standardized_Impact_USD'],
+    color=colors,
+    edgecolor='k',
+    alpha=0.85,
+)
+axes[1].axvline(0, color='black', linewidth=1)
+axes[1].set_title('Feature Influence (Standardized Coefficients)')
+axes[1].set_xlabel('Price Impact per 1 Std Dev Increase (USD)')
+axes[1].grid(True, axis='x', linestyle='--', alpha=0.5)
+
+plt.tight_layout()
+plt.show()
+
+Output:
+--- Multiple Linear Regression Coefficients (Raw Units) ---
+Intercept : $25,049.24
+Engine_Size_L         : +3812.8137
+Horsepower            : +84.2855
+Fuel_Efficiency_MPG   : -549.0682
+Curb_Weight_lbs       : +0.0323
+
+--- Model Evaluation Metrics (Test Data) ---
+R-squared (R²) : 0.9740
+MAE            : $1,515.08
+RMSE           : $1,855.15
+
+--- Ranked Feature Influence (Marketing Insights) ---
+            Feature    Raw_Coef  Standardized_Impact_USD
+         Horsepower   84.285500              4954.253254
+      Engine_Size_L 3812.813717              3465.118081
+Fuel_Efficiency_MPG -549.068230             -2868.516601
+    Curb_Weight_lbs    0.032252                13.660367
