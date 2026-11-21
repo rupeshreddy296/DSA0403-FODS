@@ -1,0 +1,114 @@
+import matplotlib.pyplot as plt
+import pandas as pd
+from sklearn.cluster import KMeans
+from sklearn.metrics import silhouette_score
+from sklearn.preprocessing import StandardScaler
+
+# 1. Load the dataset (skipping the first 3 title/blank rows)
+file_path = 'FODS_Lab_Datasets_Q20_to_Q40.xlsx'
+df = pd.read_excel(file_path, sheet_name='Q39_Ecom_Tx_Clustering', skiprows=3)
+
+# 2. Select spending and purchase quantity features
+feature_cols = ['Total_Amount_Spent', 'Items_Purchased']
+X = df[feature_cols]
+
+# 3. Standardize features so dollar amounts and item counts carry equal weight
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+
+# 4. Evaluate cluster counts using Inertia (Elbow Method) and Silhouette Score
+print('--- Cluster Validation Metrics ---')
+ks = range(2, 6)
+inertias, silhouettes = [], []
+for k in ks:
+  km = KMeans(n_clusters=k, random_state=42, n_init=10)
+  labels = km.fit_predict(X_scaled)
+  inertias.append(km.inertia_)
+  sil = silhouette_score(X_scaled, labels)
+  silhouettes.append(sil)
+  print(f'k = {k} | Inertia: {km.inertia_:6.2f} | Silhouette Score: {sil:.4f}')
+
+# 5. Fit final K-Means clustering model (k = 3)
+k_optimal = 3
+kmeans = KMeans(n_clusters=k_optimal, random_state=42, n_init=10)
+df['Segment'] = kmeans.fit_predict(X_scaled)
+
+# 6. Summarize each cluster's purchasing behavior
+summary = df.groupby('Segment')[feature_cols].agg(
+    ['count', 'mean', 'median', 'min', 'max']
+)
+print('\n--- Customer Segment Summary (k = 3) ---')
+print(summary.round(2))
+
+# 7. Visualize Elbow/Silhouette Curves and Customer Clusters (Pure Matplotlib)
+fig, axes = plt.subplots(1, 2, figsize=(13, 5))
+
+# Left Panel: Elbow Method & Silhouette Score
+ax1 = axes[0]
+ax1.plot(ks, inertias, 'o-', color='#2b5c8f', linewidth=2, label='Inertia (WCSS)')
+ax1.set_title('Elbow Method & Silhouette Score Across k')
+ax1.set_xlabel('Number of Clusters (k)')
+ax1.set_ylabel('Inertia', color='#2b5c8f')
+ax1.set_xticks(list(ks))
+ax1.grid(True, linestyle='--', alpha=0.5)
+
+ax1_twin = ax1.twinx()
+ax1_twin.plot(
+    ks, silhouettes, 's--', color='#d95f02', linewidth=2, label='Silhouette Score'
+)
+ax1_twin.set_ylabel('Silhouette Score', color='#d95f02')
+
+# Right Panel: Customer Segments Scatter Plot + Cluster Centroids
+spend_order = (
+    df.groupby('Segment')['Total_Amount_Spent'].mean().sort_values().index.tolist()
+)
+segment_labels = {
+    spend_order[0]: 'Low-Spend Small Basket',
+    spend_order[1]: 'Mid-Tier Moderate Basket',
+    spend_order[2]: 'High-Spend Bulk Buyers',
+}
+colors = ['#1b9e77', '#2b5c8f', '#d95f02']
+
+for idx, seg in enumerate(spend_order):
+  subset = df[df['Segment'] == seg]
+  axes[1].scatter(
+      subset['Items_Purchased'],
+      subset['Total_Amount_Spent'],
+      c=colors[idx],
+      label=f'Cluster {seg}: {segment_labels[seg]}',
+      s=65,
+      alpha=0.85,
+      edgecolors='k',
+  )
+
+centroids_orig = scaler.inverse_transform(kmeans.cluster_centers_)
+axes[1].scatter(
+    centroids_orig[:, 1],
+    centroids_orig[:, 0],
+    c='yellow',
+    marker='X',
+    s=220,
+    edgecolors='black',
+    linewidth=1.5,
+    label='Cluster Centroids',
+)
+
+axes[1].set_title('E-Commerce Customer Segments (k = 3)')
+axes[1].set_xlabel('Number of Items Purchased')
+axes[1].set_ylabel('Total Amount Spent ($)')
+axes[1].legend(fontsize=8)
+axes[1].grid(True, linestyle='--', alpha=0.5)
+
+plt.tight_layout()
+plt.show()
+
+Output:
+k = 5 | Inertia:   6.70 | Silhouette Score: 0.6640
+
+--- Customer Segment Summary (k = 3) ---
+        Total_Amount_Spent                                  Items_Purchased                      
+                     count    mean  median     min      max           count   mean median min max
+Segment                                                                                          
+0                       25  431.50  422.26  242.13   639.46              25   8.28    8.0   5  15
+1                       19  975.12  933.64  612.09  1366.92              19  20.21   19.0  13  27
+2                       26   95.86   99.02   17.51   145.69              26   2.00    2.0   1   5
