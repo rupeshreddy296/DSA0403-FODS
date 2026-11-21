@@ -1,0 +1,59 @@
+import os
+import numpy as np
+import pandas as pd
+from scipy import stats
+
+filename = "FODS_Lab_Datasets_Q20_to_Q40.xlsx"
+search_dirs = [
+    ".",
+    r"C:\Users\rupes\Downloads",
+    r"C:\Users\rupes\OneDrive\Desktop",
+    r"C:\Users\rupes\Desktop",
+]
+
+file_path = None
+for folder in search_dirs:
+  candidate = os.path.join(folder, filename)
+  if os.path.exists(candidate):
+    file_path = candidate
+    break
+
+if file_path is None:
+  raise FileNotFoundError(
+      f"Could not find {filename}. Move it into C:\\Users\\rupes\\OneDrive\\Desktop\\FODS LAB"
+  )
+
+print(f"Loaded file from: {file_path}\n")
+df = pd.read_excel(file_path, sheet_name="Q22_Customer_Reviews", skiprows=3)
+
+# Filter for Wireless Audio
+category = "Wireless Audio"
+ratings = df[df["Product_Category"] == category]["Rating"].dropna()
+
+# Calculate sample statistics
+n = len(ratings)
+sample_mean = ratings.mean()
+sample_std = ratings.std(ddof=1)
+sem = sample_std / np.sqrt(n)
+
+# Calculate 95% and 99% Confidence Intervals
+ci_95 = stats.t.interval(confidence=0.95, df=n - 1, loc=sample_mean, scale=sem)
+ci_99 = stats.t.interval(confidence=0.99, df=n - 1, loc=sample_mean, scale=sem)
+
+print(f"Product Category: {category}")
+print(f"Sample Size (n): {n}")
+print(f"Sample Mean Rating: {sample_mean:.4f}")
+print(f"Sample Std Dev: {sample_std:.4f}")
+print(f"Standard Error (SEM): {sem:.4f}")
+print(f"95% Confidence Interval: ({ci_95[0]:.4f}, {ci_95[1]:.4f})")
+print(f"99% Confidence Interval: ({ci_99[0]:.4f}, {ci_99[1]:.4f})")
+
+Output:
+
+Product Category: Wireless Audio
+Sample Size (n): 80
+Sample Mean Rating: 3.8125
+Sample Std Dev: 1.2437
+Standard Error (SEM): 0.1390
+95% Confidence Interval: (3.5357, 4.0893)
+99% Confidence Interval: (3.4455, 4.1795)
